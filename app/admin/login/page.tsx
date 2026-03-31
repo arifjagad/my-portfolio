@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
 import { toast } from "sonner";
 
-export default function AdminLoginPage() {
+// ── Komponen inner yang memakai useSearchParams ──────────────
+// Wajib dipisah dari page agar bisa di-wrap Suspense
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") ?? "/admin";
@@ -47,6 +49,61 @@ export default function AdminLoginPage() {
   }
 
   return (
+    <form onSubmit={handleLogin} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor="admin-email"
+          className="font-mono text-xs text-slate-500 uppercase tracking-wider"
+        >
+          Email
+        </label>
+        <input
+          id="admin-email"
+          type="email"
+          required
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="nama@email.com"
+          className="rounded-lg border border-navy-800 bg-navy-950 px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 outline-none transition-all focus:border-forest-700 focus:ring-2 focus:ring-forest-700/20"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor="admin-password"
+          className="font-mono text-xs text-slate-500 uppercase tracking-wider"
+        >
+          Password
+        </label>
+        <input
+          id="admin-password"
+          type="password"
+          required
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          className="rounded-lg border border-navy-800 bg-navy-950 px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 outline-none transition-all focus:border-forest-700 focus:ring-2 focus:ring-forest-700/20"
+        />
+      </div>
+
+      <button
+        id="btn-admin-login"
+        type="submit"
+        disabled={loading}
+        className="cursor-pointer mt-2 w-full rounded-lg bg-forest-200 py-2.5 text-sm font-semibold text-navy-950 transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{ boxShadow: "0 0 20px rgba(149,213,178,0.1)" }}
+      >
+        {loading ? "Masuk..." : "Masuk"}
+      </button>
+    </form>
+  );
+}
+
+// ── Page utama — useSearchParams TIDAK boleh dipakai langsung di sini ──
+export default function AdminLoginPage() {
+  return (
     <div className="min-h-screen bg-navy-950 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
@@ -66,55 +123,16 @@ export default function AdminLoginPage() {
             Gunakan akun Supabase yang kamu miliki.
           </p>
 
-          <form onSubmit={handleLogin} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="admin-email"
-                className="font-mono text-xs text-slate-500 uppercase tracking-wider"
-              >
-                Email
-              </label>
-              <input
-                id="admin-email"
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@email.com"
-                className="rounded-lg border border-navy-800 bg-navy-950 px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 outline-none transition-all focus:border-forest-700 focus:ring-2 focus:ring-forest-700/20"
-              />
+          {/* Suspense wajib karena LoginForm memakai useSearchParams */}
+          <Suspense fallback={
+            <div className="flex flex-col gap-4 animate-pulse">
+              <div className="h-10 rounded-lg bg-navy-800" />
+              <div className="h-10 rounded-lg bg-navy-800" />
+              <div className="h-10 rounded-lg bg-navy-800" />
             </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="admin-password"
-                className="font-mono text-xs text-slate-500 uppercase tracking-wider"
-              >
-                Password
-              </label>
-              <input
-                id="admin-password"
-                type="password"
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="rounded-lg border border-navy-800 bg-navy-950 px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 outline-none transition-all focus:border-forest-700 focus:ring-2 focus:ring-forest-700/20"
-              />
-            </div>
-
-            <button
-              id="btn-admin-login"
-              type="submit"
-              disabled={loading}
-              className="cursor-pointer mt-2 w-full rounded-lg bg-forest-200 py-2.5 text-sm font-semibold text-navy-950 transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ boxShadow: "0 0 20px rgba(149,213,178,0.1)" }}
-            >
-              {loading ? "Masuk..." : "Masuk"}
-            </button>
-          </form>
+          }>
+            <LoginForm />
+          </Suspense>
         </div>
 
         <p className="mt-6 text-center font-mono text-xs text-slate-500">
