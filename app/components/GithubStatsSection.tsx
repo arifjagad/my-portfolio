@@ -61,7 +61,7 @@ export default function GithubStatsSection({ stats }: Props) {
         </motion.div>
 
         {/* ── Row 1: Key Metrics ──────────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 sm:gap-6 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 mb-10">
           {/* Public Repos */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}

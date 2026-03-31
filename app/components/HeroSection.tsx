@@ -104,7 +104,7 @@ export default function HeroSection({ profile }: Props) {
           <Link
             href="#projects"
             id="cta-lihat-project"
-            className="group inline-flex items-center gap-3 rounded-full bg-forest-200 px-8 py-4 text-[15px] font-bold text-navy-950 transition-all duration-500 hover:bg-forest-100 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(149,213,178,0.4)]"
+            className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full bg-forest-200 px-8 py-4 text-[15px] font-bold text-navy-950 transition-all duration-500 hover:bg-forest-100 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(149,213,178,0.4)]"
           >
             <div className="relative flex items-center justify-center">
               <div className="absolute inset-0 rounded-full bg-navy-950/20 blur-xs group-hover:blur-sm transition-all" />
@@ -120,7 +120,7 @@ export default function HeroSection({ profile }: Props) {
               href={profile.cv_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center gap-3 rounded-full border border-navy-800/60 bg-navy-900/40 backdrop-blur-sm px-8 py-4 text-[15px] font-bold text-slate-300 transition-all duration-500 hover:border-forest-700/50 hover:bg-forest-700/10 hover:text-forest-200 hover:-translate-y-1 hover:shadow-[0_8px_30px_-12px_rgba(149,213,178,0.2)]"
+              className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full border border-navy-800/60 bg-navy-900/40 backdrop-blur-sm px-8 py-4 text-[15px] font-bold text-slate-300 transition-all duration-500 hover:border-forest-700/50 hover:bg-forest-700/10 hover:text-forest-200 hover:-translate-y-1 hover:shadow-[0_8px_30px_-12px_rgba(149,213,178,0.2)]"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-300 group-hover:scale-110">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>

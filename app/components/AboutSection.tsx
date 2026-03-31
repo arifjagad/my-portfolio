@@ -78,14 +78,14 @@ export default function AboutSection({ profile }: Props) {
               <span className="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-forest-200 ring-4 ring-navy-950 z-10" />
               <span className="absolute -bottom-2 -left-2 h-3 w-3 rounded-full bg-forest-700 ring-4 ring-navy-950 z-10" />
 
-              <div className="relative w-56 h-56 md:w-72 md:h-72 rounded-2xl overflow-hidden border border-navy-700 shadow-2xl">
+              <div className="relative w-full aspect-square max-w-[280px] sm:max-w-sm md:w-72 md:h-72 mx-auto rounded-2xl overflow-hidden border border-navy-700 shadow-2xl">
                 <Image
                   src={profile.photo_url}
                   alt={profile.name ?? "Profile"}
                   fill
                   priority
                   className="object-cover transition-all duration-700 grayscale group-hover:grayscale-0 group-hover:scale-105"
-                  sizes="(max-width: 768px) 224px, 288px"
+                  sizes="(max-width: 768px) 100vw, 288px"
                 />
                 {/* Subtle gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-navy-950/50 via-transparent to-transparent" />
