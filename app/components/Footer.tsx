@@ -7,12 +7,12 @@ export default function Footer() {
         <p className="font-mono text-xs text-slate-500">
           © {year} Arif Jagad. All rights reserved.
         </p>
-        <p className="font-mono text-xs text-slate-500">
+        {/* <p className="font-mono text-xs text-slate-500">
           Built with{" "}
           <span className="text-forest-200">Next.js</span> ·{" "}
           <span className="text-forest-200">Tailwind</span> ·{" "}
           <span className="text-forest-200">Framer Motion</span>
-        </p>
+        </p> */}
       </div>
     </footer>
   );

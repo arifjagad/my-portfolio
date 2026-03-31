@@ -29,7 +29,7 @@ export default function ContactSection() {
           <div className="flex flex-wrap gap-4">
             {/* WhatsApp CTA — primary */}
             <a
-              href="https://wa.me/6281234567890?text=Halo%20Arif%2C%20saya%20mau%20diskusi%20soal%20project"
+              href="https://wa.me/6282167565321?text=Halo%20Arif%2C%20saya%20mau%20diskusi%20soal%20project"
               id="cta-whatsapp-kontak"
               target="_blank"
               rel="noopener noreferrer"
@@ -45,7 +45,7 @@ export default function ContactSection() {
 
             {/* Email — ghost */}
             <a
-              href="mailto:arifjagad@gmail.com"
+              href="mailto:arifjagad34@gmail.com"
               id="cta-email-kontak"
               className="inline-flex items-center gap-2.5 rounded-lg border border-navy-800 bg-transparent px-6 py-3 text-sm font-semibold text-slate-500 transition-all duration-200 hover:bg-navy-900 hover:text-slate-200 hover:border-forest-700"
             >
