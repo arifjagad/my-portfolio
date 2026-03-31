@@ -109,7 +109,7 @@ export default function ProfileForm({ profile, onSave }: Props) {
             <div className="mt-3">
               <p className="mb-2 text-xs font-semibold text-slate-500">Foto Saat Ini:</p>
               <div className="relative h-20 w-20 overflow-hidden rounded-xl border border-navy-800">
-                <Image src={profile.photo_url} alt="Profile" fill className="object-cover" />
+                <Image src={profile.photo_url} alt="Profile" fill priority className="object-cover" />
               </div>
             </div>
           )}
