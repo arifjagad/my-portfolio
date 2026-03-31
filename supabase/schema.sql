@@ -94,6 +94,7 @@ CREATE TABLE profiles (
   about_text  text,
   cv_url      text,
   photo_url   text,
+  status_text text DEFAULT 'Available for new projects',
   updated_at  timestamptz DEFAULT now()
 );
 

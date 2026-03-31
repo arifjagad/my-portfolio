@@ -72,6 +72,16 @@ export default function ProfileForm({ profile, onSave }: Props) {
             className={inputClass}
           />
         </div>
+        <div>
+          <Label required>Status Pekerjaan (Badge Teks)</Label>
+          <input
+            name="status_text"
+            defaultValue={profile?.status_text ?? "Open to Work"}
+            required
+            className={inputClass}
+            placeholder="Contoh: Open to Work, Tersedia untuk Freelance"
+          />
+        </div>
       </div>
 
       <div>

@@ -27,8 +27,33 @@ export default function AboutSection({ profile }: Props) {
       {/* Background decorative orbs */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-forest-700/10 blur-3xl" />
-        <div className="absolute -bottom-32 right-0 h-80 w-80 rounded-full bg-forest-700/8 blur-3xl" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-navy-950/40 blur-3xl" />
+        
+        {/* ── Symmetrical connecting bridge (Bottom Half) ── */}
+        <div className="absolute -bottom-[175px] -right-[70px] h-[350px] w-[350px] rounded-full bg-forest-700/10 blur-3xl" />
+        
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1 }}
+          className="absolute -bottom-[175px] -right-[70px] h-[350px] w-[350px] rounded-full border border-forest-700/30"
+        />
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, delay: 0.2 }}
+          className="absolute -bottom-[105px] -right-[30px] h-[210px] w-[210px] rounded-full border border-forest-200/10"
+        />
+        {/* Tiny filled dot accent */}
+        <motion.span
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="absolute bottom-[15px] right-[100px] h-3 w-3 rounded-full bg-forest-200/40"
+        />
       </div>
 
       <div className="section-container">
@@ -74,7 +99,7 @@ export default function AboutSection({ profile }: Props) {
                 transition={{ delay: 0.5, duration: 0.5 }}
                 className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-forest-700/40 bg-navy-900/90 backdrop-blur-sm px-4 py-1.5 text-xs font-medium text-forest-200 shadow-lg"
               >
-                ✦ Open to Work
+                ✦ {profile.status_text || "Open to Work"}
               </motion.div>
             </motion.div>
           )}

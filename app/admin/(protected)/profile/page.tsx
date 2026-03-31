@@ -50,6 +50,7 @@ async function saveProfile(formData: FormData): Promise<{ error?: string; succes
     about_text: formData.get("about_text") as string,
     cv_url: cvUrl,
     photo_url: photoUrl,
+    status_text: formData.get("status_text") as string,
     updated_at: new Date().toISOString()
   };
 

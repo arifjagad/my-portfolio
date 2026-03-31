@@ -20,14 +20,10 @@ function MarqueeRow({ items, direction = "left", speed = 30 }: MarqueeRowProps) 
   const isLeft = direction === "left";
 
   return (
-    <div className="relative flex w-full overflow-hidden">
-      {/* Gradient fade kiri */}
-      <div className="absolute inset-y-0 left-0 z-10 w-28 bg-linear-to-r from-navy-950 to-transparent pointer-events-none" />
-      {/* Gradient fade kanan */}
-      <div className="absolute inset-y-0 right-0 z-10 w-28 bg-linear-to-l from-navy-950 to-transparent pointer-events-none" />
-
+    // Menggunakan trik mask-image yang jauh lebih presisi dan clean dibanding div absolute bergradasi
+    <div className="relative flex w-full overflow-hidden mask-[linear-gradient(to_right,transparent,black_10%,black_90%,transparent)] py-2">
       <motion.div
-        className="flex flex-nowrap gap-4 py-3"
+        className="flex flex-nowrap gap-4 sm:gap-6"
         animate={{ x: isLeft ? ["0%", "-33.333%"] : ["-33.333%", "0%"] }}
         transition={{
           ease: "linear",
@@ -38,23 +34,24 @@ function MarqueeRow({ items, direction = "left", speed = 30 }: MarqueeRowProps) 
         {loopItems.map((skill, index) => (
           <div
             key={`${skill.id}-${index}`}
-            className="group flex flex-none items-center gap-3 rounded-full border border-navy-800 bg-navy-900/50 px-5 py-2.5 transition-all duration-300 hover:border-forest-700/50 hover:bg-forest-700/10 hover:scale-105 cursor-default"
+            className="group flex flex-none items-center gap-3.5 rounded-full border border-navy-800/60 bg-navy-900/40 backdrop-blur-sm px-6 py-3 transition-all duration-300 hover:border-forest-700/50 hover:bg-forest-700/10 hover:-translate-y-1 hover:shadow-[0_8px_20px_-6px_rgba(149,213,178,0.2)] cursor-default"
           >
             {skill.image_url ? (
-              <div className="relative h-5 w-5 shrink-0 grayscale transition-all duration-300 group-hover:grayscale-0">
+              <div className="relative flex h-6 w-6 shrink-0 items-center justify-center opacity-70 grayscale transition-all duration-500 group-hover:-translate-y-0.5 group-hover:scale-110 group-hover:opacity-100 group-hover:grayscale-0">
                 <Image
                   src={skill.image_url}
                   alt={skill.name}
-                  fill
-                  className="object-contain"
+                  width={24}
+                  height={24}
+                  className="object-contain drop-shadow-sm max-h-full max-w-full"
                 />
               </div>
             ) : (
-              <div className="h-5 w-5 shrink-0 rounded-full bg-navy-800 flex items-center justify-center text-[9px] text-slate-500 font-bold uppercase">
+              <div className="h-6 w-6 shrink-0 rounded-full bg-navy-800/80 border border-navy-700 flex items-center justify-center text-[10px] text-slate-400 font-bold uppercase transition-all duration-300 group-hover:border-forest-700/50 group-hover:text-forest-200 group-hover:scale-110">
                 {skill.name.substring(0, 1)}
               </div>
             )}
-            <span className="font-mono text-xs font-medium text-slate-400 group-hover:text-forest-200 transition-colors duration-300 whitespace-nowrap">
+            <span className="font-mono text-sm font-medium text-slate-400 group-hover:text-forest-200 transition-colors duration-300 whitespace-nowrap tracking-wide">
               {skill.name}
             </span>
           </div>
@@ -81,8 +78,14 @@ export default function TechStackSection({ skills }: Props) {
   const r3 = row3.length > 0 ? row3 : skills;
 
   return (
-    <section id="tech-stack" className="py-20 border-t border-navy-900 overflow-hidden bg-navy-950">
-      <div className="section-container border-b border-navy-900/50 pb-12 mb-12">
+    <section id="tech-stack" className="relative py-24 border-t border-navy-900 overflow-hidden bg-navy-950">
+      
+      {/* ── Background Depth Orb ── */}
+      <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
+        <div className="h-[400px] w-full max-w-4xl rounded-[100%] bg-forest-700/5 blur-[120px]" />
+      </div>
+
+      <div className="section-container pb-14">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -91,11 +94,13 @@ export default function TechStackSection({ skills }: Props) {
           transition={{ duration: 0.55 }}
           className="text-center"
         >
-          <p className="mb-2 font-mono text-xs tracking-widest text-forest-200 uppercase">
-            — Alat & Teknologi —
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-forest-200/70">
+            — ALAT & TEKNOLOGI
           </p>
-          <h2 className="text-2xl font-bold text-slate-200">Tech Stack</h2>
-          <p className="mt-3 text-sm text-slate-500 max-w-lg mx-auto leading-relaxed">
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-100 leading-tight">
+            Tech <span className="text-forest-200">Stack</span>
+          </h2>
+          <p className="mt-5 text-[15px] text-slate-400 max-w-lg mx-auto leading-relaxed">
             Teknologi dan framework yang sering saya gunakan untuk membangun aplikasi yang skalabel, aman, dan berkinerja tinggi.
           </p>
         </motion.div>
@@ -106,15 +111,15 @@ export default function TechStackSection({ skills }: Props) {
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-        className="flex flex-col gap-4"
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="flex flex-col gap-5 sm:gap-6"
       >
         {/* Row 1 — kiri, cepat */}
-        <MarqueeRow items={r1} direction="left" speed={25} />
+        <MarqueeRow items={r1} direction="left" speed={30} />
         {/* Row 2 — kanan, sedang */}
-        <MarqueeRow items={r2} direction="right" speed={35} />
-        {/* Row 3 — kiri, lambat */}
-        <MarqueeRow items={r3} direction="left" speed={30} />
+        <MarqueeRow items={r2} direction="right" speed={40} />
+        {/* Row 3 — kiri, agak lambat */}
+        <MarqueeRow items={r3} direction="left" speed={35} />
       </motion.div>
     </section>
   );

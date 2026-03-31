@@ -124,5 +124,6 @@ export type Profile = {
   about_text: string | null;
   cv_url: string | null;
   photo_url: string | null;
+  status_text: string | null;
   updated_at: string;
 };
