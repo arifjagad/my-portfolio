@@ -285,6 +285,144 @@ function cleanPhone(phone: string | null): string {
   return phone.replace(/\D/g, "").replace(/^0/, "62");
 }
 
+interface ImageCandidate {
+  url: string;
+  alt: string;
+  credit: string;
+}
+
+const UNSPLASH_DIRECT_FALLBACKS: string[] = [
+  "https://images.unsplash.com/photo-1631679706909-1844bbd07221?q=80&w=1584&auto=format&fit=crop&ixlib=rb-4.1.0",
+  "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.1.0",
+];
+
+const IMAGE_KEYWORDS_EN: Record<string, string[]> = {
+  "Salon Kecantikan": ["hair salon interior", "beauty salon stylist", "hair styling salon"],
+  "Barbershop": ["barbershop interior", "barber cutting hair", "mens grooming barber"],
+  "Tempat Cukur Rambut": ["barber shop haircut", "haircut barber chair", "male barber haircut"],
+  "Apotek": ["pharmacy interior", "pharmacist medicine", "drugstore counter"],
+  "Kafe": ["coffee shop interior", "barista making coffee", "cozy cafe table"],
+  "Restoran": ["restaurant interior", "restaurant food plating", "restaurant service"],
+  "Rumah Makan": ["indonesian restaurant", "family dining restaurant", "serving indonesian food"],
+  "Bengkel Sepeda Motor": ["motorcycle mechanic workshop", "motorbike service garage", "mechanic fixing motorcycle"],
+  "Bengkel": ["automotive mechanic workshop", "car mechanic garage", "vehicle service center"],
+  "Klinik Medis": ["medical clinic interior", "doctor patient consultation", "clinic reception healthcare"],
+  "Klinik": ["clinic waiting room", "clinic doctor consultation", "healthcare clinic room"],
+  "Toko Optik": ["optical store glasses", "optometrist eye exam", "eyewear shop interior"],
+  "Hotel": ["hotel lobby", "hotel room interior", "hotel reception"],
+};
+
+function getEnglishImageKeywords(biz: BusinessData): string[] {
+  const direct = IMAGE_KEYWORDS_EN[biz.kategori];
+  if (direct) return direct;
+
+  const lowerCategory = biz.kategori.toLowerCase();
+  const matched = Object.entries(IMAGE_KEYWORDS_EN).find(([k]) =>
+    lowerCategory.includes(k.toLowerCase())
+  );
+
+  if (matched) return matched[1];
+  return [
+    `${biz.kategori} business interior`,
+    `${biz.kategori} storefront`,
+    "local business indonesia",
+  ];
+}
+
+async function fetchUnsplashImageCandidates(
+  biz: BusinessData,
+  options: { maxImages?: number } = {}
+): Promise<ImageCandidate[]> {
+  const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+  const maxImages = options.maxImages ?? 24;
+
+  if (!accessKey) {
+    return [];
+  }
+
+  const keywords = getEnglishImageKeywords(biz);
+  const seen = new Set<string>();
+  const images: ImageCandidate[] = [];
+
+  for (const query of keywords) {
+    if (images.length >= maxImages) break;
+
+    try {
+      const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
+        query
+      )}&orientation=landscape&per_page=20&content_filter=high`;
+
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Client-ID ${accessKey}`,
+        },
+        next: { revalidate: 86400 },
+      });
+
+      if (!res.ok) {
+        console.warn(`[AI Generator] Unsplash API gagal (${res.status}) untuk query: ${query}`);
+        continue;
+      }
+
+      const data = await res.json();
+      const results: any[] = Array.isArray(data?.results) ? data.results : [];
+
+      for (const item of results) {
+        if (images.length >= maxImages) break;
+
+        const rawUrl = item?.urls?.regular || item?.urls?.full || item?.urls?.raw;
+        if (!rawUrl || seen.has(rawUrl)) continue;
+
+        seen.add(rawUrl);
+        images.push({
+          url: rawUrl,
+          alt: item?.alt_description || `${biz.kategori} business visual`,
+          credit: item?.user?.name || "Unsplash Contributor",
+        });
+      }
+    } catch (err: any) {
+      console.warn(`[AI Generator] Unsplash fetch error untuk query ${query}: ${err?.message || err}`);
+    }
+  }
+
+  return images.slice(0, maxImages);
+}
+
+function enforceUniqueImageSources(
+  html: string,
+  imageCandidates: ImageCandidate[] = []
+): string {
+  if (!html || imageCandidates.length < 2) return html;
+
+  const imgTagRegex = /<img\b[^>]*>/gi;
+  const used = new Set<string>();
+  let candidateIndex = 0;
+
+  return html.replace(imgTagRegex, (tag) => {
+    const srcMatch = tag.match(/\bsrc=(['"])(.*?)\1/i);
+    if (!srcMatch) return tag;
+
+    const originalSrc = srcMatch[2];
+    if (!used.has(originalSrc)) {
+      used.add(originalSrc);
+      return tag;
+    }
+
+    let replacement = "";
+    while (candidateIndex < imageCandidates.length) {
+      const candidateUrl = imageCandidates[candidateIndex++].url;
+      if (!used.has(candidateUrl)) {
+        replacement = candidateUrl;
+        used.add(candidateUrl);
+        break;
+      }
+    }
+
+    if (!replacement) return tag;
+    return tag.replace(srcMatch[0], `src="${replacement}"`);
+  });
+}
+
 // ─── SVG Icon Library ─────────────────────────────────────────────────────────
 // Berikan library SVG inline agar AI tidak perlu generate sendiri & tidak pakai emoji
 const SVG_ICONS = `
@@ -302,7 +440,7 @@ const SVG_ICONS = `
 `;
 
 // ─── Prompt builder ───────────────────────────────────────────────────────────
-function buildPrompt(biz: BusinessData): string {
+function buildPrompt(biz: BusinessData, imageCandidates: ImageCandidate[] = []): string {
   const enriched = biz.enriched_data;
 
   // Cari config kategori
@@ -336,6 +474,13 @@ function buildPrompt(biz: BusinessData): string {
       : "";
 
   const isDark = config.cssTheme === "dark";
+  const fallbackImageUrl = imageCandidates[0]?.url || UNSPLASH_DIRECT_FALLBACKS[0];
+
+  const imagePoolText = imageCandidates.length
+    ? imageCandidates
+        .map((img, idx) => `${idx + 1}. ${img.url} | alt: ${img.alt} | by: ${img.credit}`)
+        .join("\n")
+    : "(UNSPLASH_API_UNAVAILABLE: gunakan URL direct images.unsplash.com/photo-... yang valid dan relevan.)";
 
   // CSS Variables string untuk Tailwind config
   const tailwindConfig = `
@@ -361,7 +506,9 @@ function buildPrompt(biz: BusinessData): string {
     }
   `;
 
-  return `Kamu adalah world-class frontend engineer & UI designer. Tugasmu adalah menghasilkan satu file HTML landing page yang LUAR BIASA PREMIUM untuk bisnis lokal berikut.
+  return `Kamu adalah world-class frontend engineer, conversion-focused copywriter, dan UI designer untuk website bisnis lokal Indonesia.
+
+Tugas: hasilkan SATU file HTML landing page yang terlihat seperti hasil agensi profesional (bukan template AI), siap dipakai sebagai halaman demo pitch client.
 
 === DATA BISNIS ===
 Nama Bisnis   : ${biz.nama_bisnis}
@@ -378,6 +525,11 @@ ${keunggulanList}
 
 === VIBE & ESTETIKA ===
 ${config.vibe}
+
+=== TUJUAN BISNIS HALAMAN INI ===
+- Meningkatkan niat chat WhatsApp dari pengunjung baru
+- Menunjukkan kredibilitas bisnis lokal di Medan
+- Membuat owner merasa ini website layak dipakai untuk bisnis asli, bukan sekadar demo
 
 === PALET WARNA (GUNAKAN PERSIS) ===
 Primary   : ${config.warna.primary}
@@ -402,6 +554,46 @@ Google Maps  : ${mapsLink}
 === TAGLINE INSPIRASI ===
 "${config.heroTagline}"
 (Kembangkan menjadi copy yang lebih unik & relevan dengan nama bisnis)
+
+=== GAMBAR / VISUAL ASSET (WAJIB REALISTIS, BUKAN KOTAK KOSONG) ===
+Daftar URL gambar Unsplash yang SUDAH divalidasi sistem:
+${imagePoolText}
+
+- Gunakan minimal 5 gambar relevan, dan tambahkan sesuai kebutuhan layout (umumnya 6-12 gambar).
+- Komposisi wajib: 1 hero image, 2 service/lifestyle image, 1 about/team image, 1 gallery/ambience image.
+- Sumber yang diizinkan: Unsplash.
+- WAJIB prioritaskan URL dari daftar yang disediakan sistem di atas.
+- DILARANG membuat URL image sendiri jika daftar tersedia.
+- DILARANG pakai source.unsplash.com sebagai URL utama.
+- WAJIB gunakan src berbeda untuk tiap <img> (jangan ulang URL yang sama).
+- DILARANG pakai gambar random yang tidak relevan dengan kategori bisnis.
+- Setiap <img> wajib punya: loading="lazy", decoding="async", referrerpolicy="no-referrer", alt deskriptif berbahasa Indonesia, class object-cover.
+- Setiap <img> wajib punya fallback onerror, contoh:
+  onerror="this.onerror=null;this.src='${fallbackImageUrl}';"
+- Jika memilih tidak pakai foto untuk satu section, ganti dengan visual gradient/SVG dekoratif yang sengaja didesain (bukan placeholder box polos).
+
+=== FRAMEWORK COPYWRITING (WAJIB) ===
+Gunakan alur pesan seperti ini:
+1) Hook cepat: masalah/keinginan utama customer lokal
+2) Value proposition: kenapa ${biz.nama_bisnis} lebih dipercaya
+3) Bukti sosial: rating/ulasan/testimoni singkat realistis
+4) CTA jelas: ajak chat WhatsApp sekarang
+
+Aturan copy:
+- Bahasa Indonesia natural, hangat, profesional, tidak lebay.
+- Hindari klaim bombastis seperti "nomor 1 se-Indonesia".
+- Jika data tidak ada, gunakan teks netral yang realistis dan tidak mengada-ada.
+- Maksimal 1-2 kalimat per blok teks agar mudah scan di mobile.
+
+=== PROSES KERJA INTERNAL (JANGAN DITAMPILKAN KE OUTPUT) ===
+Lakukan langkah ini secara internal sebelum menulis HTML final:
+1) Turunkan 3 konsep visual singkat dari vibe kategori.
+2) Pilih 1 konsep terbaik untuk bisnis ini.
+3) Susun wireframe section-by-section.
+4) Tulis HTML final.
+5) Audit hasil dengan checklist kualitas di bawah.
+
+Jangan tampilkan proses berpikir. Output hanya HTML final.
 
 === ATURAN TEKNIS WAJIB ===
 
@@ -474,6 +666,27 @@ Google Maps  : ${mapsLink}
     
     /* Star rating */
     .stars { color: #f59e0b; display: inline-flex; gap: 2px; }
+
+    /* Animasi halus yang terasa premium, bukan berlebihan */
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up { animation: fade-up 0.8s ease both; }
+
+    @keyframes float-soft {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .float-soft { animation: float-soft 6s ease-in-out infinite; }
+
+    .hover-lift {
+      transition: transform 0.35s ease, box-shadow 0.35s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.15);
+    }
   </style>
 </head>
 
@@ -501,6 +714,16 @@ Gunakan SVG di atas untuk semua ikon. Tidak perlu membuat SVG baru, cukup salin 
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
   }, { threshold: 0.1 });
   reveals.forEach(el => observer.observe(el));
+
+  // Sedikit parallax untuk elemen dekoratif
+  const parallaxEls = document.querySelectorAll('[data-parallax]');
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    parallaxEls.forEach((el) => {
+      const speed = Number(el.getAttribute('data-parallax')) || 0.08;
+      el.style.transform = 'translateY(' + (y * speed) + 'px)';
+    });
+  });
   
   // Smooth scroll navbar links
   document.querySelectorAll('a[href^="#"]').forEach(a => {
@@ -511,6 +734,30 @@ Gunakan SVG di atas untuk semua ikon. Tidak perlu membuat SVG baru, cukup salin 
   });
 </script>
 
+5. RESPONSIVE & ACCESSIBILITY (WAJIB):
+- Mobile-first: layout harus rapi mulai 360px.
+- Gunakan container dengan max-width yang konsisten (mis. max-w-6xl atau max-w-7xl).
+- Pastikan kontras teks terbaca jelas di semua section.
+- Semua tombol/link utama wajib punya hover, focus-visible, dan aria-label jika perlu.
+- Jangan gunakan ukuran font terlalu kecil (body minimal setara 16px).
+- Hindari section terlalu padat; beri whitespace yang cukup.
+
+6. STRUKTUR NAVBAR & SECTION ID (WAJIB):
+- Navbar berisi anchor ke section utama: #layanan, #keunggulan, #tentang, #kontak.
+- Setiap section wajib punya id yang benar agar smooth scroll berfungsi.
+
+7. KUALITAS KODE (WAJIB):
+- HTML valid dan lengkap: <!DOCTYPE html>, <html>, <head>, <body>.
+- Tidak ada komentar TODO, placeholder kosong, atau teks debugging.
+- Tidak ada dependency selain Tailwind CDN + Google Fonts + vanilla JS ringan.
+- Tidak boleh ada script eksternal lain.
+
+8. MICRO-ANIMATION (WAJIB HALUS):
+- Gunakan animasi seperlunya pada elemen penting: hero CTA, cards layanan, dan decorative accent.
+- Hindari animasi berulang yang mengganggu atau terlalu cepat.
+- Durasi ideal 300ms-900ms, easing smooth.
+- Hormati keterbacaan konten: animasi tidak boleh mengorbankan UX.
+
 === LARANGAN KERAS (MELANGGAR = OUTPUT GAGAL) ===
 🚫 DILARANG emoji Unicode apapun (✂️ 💆 ⭐ 🌟 💅 🏪 dsb) — GUNAKAN SVG dari library di atas
 🚫 DILARANG background flat abu-abu (#f5f5f5, #f0f0f0, bg-gray-100) sebagai background utama section
@@ -519,7 +766,8 @@ Gunakan SVG di atas untuk semua ikon. Tidak perlu membuat SVG baru, cukup salin 
 🚫 DILARANG layout kartu yang semua simetris sempurna — harus ada variasi ukuran, asimetri
 🚫 DILARANG heading hero kurang dari text-5xl (min text-6xl di desktop)
 🚫 DILARANG teks "Lorem ipsum" atau placeholder teks tidak bermakna
-🚫 DILARANG gambar eksternal (img src="https://...") — gunakan CSS placeholder shapes
+🚫 DILARANG gambar kosong berupa box polos tanpa fungsi visual
+🚫 DILARANG hotlink gambar dari domain acak selain Unsplash/Pexels
 🚫 DILARANG membungkus output dalam markdown code fence (\`\`\`html)
 
 === PANDUAN DESAIN PREMIUM ===
@@ -531,6 +779,7 @@ HERO SECTION:
 ${ratingBadge ? `- Tampilkan badge rating: "${ratingBadge}" dalam pill/badge estetis` : ""}
 - Dua tombol CTA: utama (WhatsApp) + sekunder (scroll ke layanan)
 - Gunakan absolute positioned decorative elements (lingkaran, garis) sebagai background flair
+- Sertakan hero visual yang relevan (foto Unsplash/Pexels atau komposisi visual artistik), bukan kotak kosong
 
 SECTION LAYANAN:
 - Bukan grid kartu identik semua. Gunakan bento-like: 1 kartu besar featured + beberapa kartu kecil
@@ -552,8 +801,66 @@ FOOTER:
 - Text: warna kontras dengan primary
 - Nama bisnis, tagline singkat, copyright tahun ini
 
+=== QUALITY CHECKLIST (WAJIB LULUS SEBELUM OUTPUT) ===
+Pastikan hasil final memenuhi semua poin ini:
+- Terasa premium dan spesifik untuk kategori "${biz.kategori}", bukan template generik.
+- Hero kuat, hierarchy jelas, CTA langsung terlihat tanpa scroll jauh.
+- Ada diferensiasi visual antar section (warna, layout, ritme spacing).
+- Copy terasa manusiawi dan persuasif untuk audiens lokal Medan.
+- Mobile experience rapi: tidak ada overflow horizontal.
+- Semua link CTA valid: WhatsApp = ${waLink}, Maps = ${mapsLink}.
+- Visual tidak terlihat seperti placeholder box; gunakan foto relevan atau bentuk dekoratif yang intentional.
+- Animasi terasa halus dan profesional, bukan gimmick berlebihan.
+- Variasi gambar terlihat nyata: tidak ada URL <img> yang sama dipakai berulang.
+
 === OUTPUT ===
-Kembalikan HANYA kode HTML lengkap. Mulai langsung dari <!DOCTYPE html>. Tanpa penjelasan. Tanpa markdown fence.`;
+Kembalikan HANYA kode HTML lengkap.
+Mulai langsung dari <!DOCTYPE html>.
+Tanpa penjelasan.
+Tanpa markdown fence.
+Tanpa teks lain di luar HTML.`;
+}
+
+function injectImageFallbackScript(
+  html: string,
+  biz: BusinessData,
+  imageCandidates: ImageCandidate[] = []
+): string {
+  if (!html || !html.includes("</body>")) return html;
+  if (html.includes("data-image-fallback-script")) return html;
+
+  const fallbackCandidates = [
+    ...imageCandidates.map((img) => img.url),
+    ...UNSPLASH_DIRECT_FALLBACKS,
+  ];
+
+  const fallbackScript = `
+<script data-image-fallback-script>
+  (function () {
+    const fallbackList = ${JSON.stringify(fallbackCandidates)};
+    const images = document.querySelectorAll('img');
+
+    images.forEach((img, idx) => {
+      if (!img.getAttribute('loading')) img.setAttribute('loading', 'lazy');
+      if (!img.getAttribute('decoding')) img.setAttribute('decoding', 'async');
+      if (!img.getAttribute('referrerpolicy')) img.setAttribute('referrerpolicy', 'no-referrer');
+
+      img.addEventListener('error', function () {
+        const currentAttempt = Number(img.dataset.fallbackAttempt || '0');
+        if (currentAttempt >= fallbackList.length) return;
+        img.dataset.fallbackAttempt = String(currentAttempt + 1);
+        img.src = fallbackList[currentAttempt];
+      });
+
+      if (!img.src || img.src === '#') {
+        img.dataset.fallbackAttempt = '1';
+        img.src = fallbackList[0] || '';
+      }
+    });
+  })();
+</script>`;
+
+  return html.replace("</body>", `${fallbackScript}\n</body>`);
 }
 
 // ─── Main generator function ──────────────────────────────────────────────────
@@ -572,7 +879,11 @@ export async function generateDemoHTML(
     "gemini-2.0-flash-lite",
   ];
 
-  const prompt = buildPrompt(biz);
+  const imageCandidates = await fetchUnsplashImageCandidates(biz, { maxImages: 24 });
+  if (imageCandidates.length === 0) {
+    console.warn("[AI Generator] Tidak mendapat kandidat image dari Unsplash API. Pastikan UNSPLASH_ACCESS_KEY valid.");
+  }
+  const prompt = buildPrompt(biz, imageCandidates);
   const maxRetries = options.retries ?? 3;
   let lastError: Error | null = null;
 
@@ -581,7 +892,8 @@ export async function generateDemoHTML(
       const model = genAI.getGenerativeModel({
         model: modelName,
         generationConfig: {
-          temperature: 1.0,       // sedikit lebih tinggi untuk kreativitas
+          temperature: 0.7,       // seimbang: tetap kreatif tapi lebih konsisten
+          topP: 0.9,
           maxOutputTokens: 65536,
         },
       });
@@ -613,19 +925,23 @@ export async function generateDemoHTML(
 
           if (doctypeIdx !== -1 && htmlEndIdx !== -1) {
             const html = text.slice(doctypeIdx, htmlEndIdx + 7);
+            const uniqueHtml = enforceUniqueImageSources(html, imageCandidates);
+            const safeHtml = injectImageFallbackScript(uniqueHtml, biz, imageCandidates);
             console.log(`[AI Generator] Extracted HTML: ${html.length} chars`);
-            return html;
+            return safeHtml;
           }
 
           const htmlOpenIdx = text.indexOf("<html");
           if (htmlOpenIdx !== -1 && htmlEndIdx !== -1) {
             const html = text.slice(htmlOpenIdx, htmlEndIdx + 7);
+            const uniqueHtml = enforceUniqueImageSources(html, imageCandidates);
+            const safeHtml = injectImageFallbackScript(uniqueHtml, biz, imageCandidates);
             console.log(`[AI Generator] Extracted HTML (no DOCTYPE): ${html.length} chars`);
-            return html;
+            return safeHtml;
           }
 
           console.warn(`[AI Generator] HTML tags not found, returning raw text (${text.length} chars)`);
-          return text;
+          return injectImageFallbackScript(text, biz, imageCandidates);
 
         } catch (err: any) {
           lastError = err;

@@ -52,9 +52,11 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
     (ed.keunggulan || []).join("\n")
   );
   const [catatan, setCatatan] = useState(ed.catatan_internal || "");
+  const [manualHtml, setManualHtml] = useState(biz.generated_html || "");
 
   // ── UI state ─────────────────────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
+  const [savingHtml, setSavingHtml] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [lockLoading, setLockLoading] = useState(false);
   const [pitchLoading, setPitchLoading] = useState(false);
@@ -139,6 +141,7 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
         generation_version: data.generation_version,
         enriched_data: collectEnrichedData(),
       }));
+      setManualHtml(data.html || "");
       setPreviewMode("iframe");
       showToast(
         force
@@ -149,6 +152,42 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
       showToast(err.message || "Generate gagal", "error");
     } finally {
       setGenerating(false);
+    }
+  }
+
+  // ── Save manual HTML ─────────────────────────────────────────────────────────
+  async function handleSaveManualHtml() {
+    if (!manualHtml.trim()) {
+      showToast("HTML kosong, tidak bisa disimpan", "error");
+      return;
+    }
+
+    setSavingHtml(true);
+    try {
+      const res = await fetch("/api/demo/html", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: biz.slug,
+          html: manualHtml,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menyimpan HTML manual");
+
+      setBiz((b) => ({
+        ...b,
+        generated_html: data.html,
+        generated_at: data.generated_at,
+        generation_version: data.generation_version,
+      }));
+      setManualHtml(data.html || "");
+      setPreviewMode("iframe");
+      showToast(`HTML manual tersimpan (v${data.generation_version})`);
+    } catch (err: any) {
+      showToast(err.message || "Gagal menyimpan HTML manual", "error");
+    } finally {
+      setSavingHtml(false);
     }
   }
 
@@ -453,6 +492,54 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
             )}
           </div>
 
+          {/* Manual HTML Editor */}
+          <div className="rounded-xl border border-navy-900 bg-navy-950/40 p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Manual HTML Editor</h2>
+              <span className="text-xs text-slate-600 font-mono">
+                {(manualHtml.length / 1024).toFixed(1)} KB
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-600">
+              Paste HTML dari Claude/ChatGPT atau edit langsung, lalu simpan ke kolom <span className="font-mono">generated_html</span>.
+            </p>
+
+            <textarea
+              id="field-manual-html"
+              value={manualHtml}
+              onChange={(e) => setManualHtml(e.target.value)}
+              rows={14}
+              spellCheck={false}
+              placeholder="Tempel HTML lengkap di sini..."
+              className="w-full bg-navy-950 border border-navy-800 rounded-lg px-3 py-3 text-xs leading-5 text-slate-200 placeholder-slate-700 focus:outline-none focus:border-forest-700 transition-colors resize-y font-mono"
+            />
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                id="btn-save-manual-html"
+                onClick={handleSaveManualHtml}
+                disabled={savingHtml || generating}
+                className="px-3 py-2 rounded-lg bg-sky-700 hover:bg-sky-600 text-white text-sm font-medium transition-colors disabled:opacity-40"
+              >
+                {savingHtml ? "Menyimpan HTML..." : "Simpan HTML Manual"}
+              </button>
+
+              <button
+                id="btn-preview-manual-html"
+                onClick={() => {
+                  if (!manualHtml.trim()) return;
+                  setBiz((b) => ({ ...b, generated_html: manualHtml }));
+                  setPreviewMode("iframe");
+                }}
+                disabled={!manualHtml.trim()}
+                className="px-3 py-2 rounded-lg border border-navy-800 text-slate-300 hover:text-slate-100 hover:border-navy-700 text-sm transition-colors disabled:opacity-40"
+              >
+                Preview dari Editor
+              </button>
+            </div>
+          </div>
+
           {/* Generation info */}
           {biz.generated_at && (
             <div className="text-xs text-slate-600 space-y-0.5 font-mono">
@@ -476,7 +563,7 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
             )}
           </div>
 
-          <div className="rounded-xl border border-navy-900 overflow-hidden bg-navy-950/20" style={{ height: "600px" }}>
+          <div className="rounded-xl border border-navy-900 overflow-hidden bg-navy-950/20" style={{ height: "1525px" }}>
             {generating ? (
               <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-600">
                 <div className="w-10 h-10 rounded-full border-2 border-forest-700/30 border-t-forest-500 animate-spin" />
