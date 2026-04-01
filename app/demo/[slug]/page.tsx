@@ -172,7 +172,7 @@ function NotGeneratedPage({ biz }: { biz: any }) {
         <div className="pt-2 border-t border-gray-900 text-xs text-gray-600 font-mono">
           demo dibuat oleh{" "}
           <a href="/" className="text-emerald-600 hover:text-emerald-400 transition-colors">
-            arifjagad.dev
+            arifjagad.my.id
           </a>
         </div>
       </div>

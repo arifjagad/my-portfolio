@@ -23,10 +23,10 @@ export default function DemoBanner({ namaBisnis, nomorTelepon }: DemoBannerProps
     : null;
 
   const waLink = cleanPhone
-    ? `https://wa.me/6285314835535?text=${encodeURIComponent(
+    ? `https://wa.me/6282167565321?text=${encodeURIComponent(
         `Halo! Saya tertarik dengan demo website yang dibuat untuk ${namaBisnis}. Bisa kita diskusikan?`
       )}`
-    : "https://wa.me/6285314835535";
+    : "https://wa.me/6282167565321";
 
   return (
     <div
@@ -62,7 +62,7 @@ export default function DemoBanner({ namaBisnis, nomorTelepon }: DemoBannerProps
             href="/"
             className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
           >
-            arifjagad.dev
+            arifjagad.my.id
           </a>
         </p>
       </div>

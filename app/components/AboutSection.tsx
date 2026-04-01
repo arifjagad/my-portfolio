@@ -119,8 +119,8 @@ export default function AboutSection({ profile }: Props) {
               </p>
 
               <h2 className="mb-6 text-3xl md:text-4xl font-bold text-slate-100 leading-tight">
-                Membangun Solusi Digital{" "}
-                <span className="text-forest-200">yang Bermakna</span>
+                Menghadirkan Solusi Digital{" "}
+                <span className="text-forest-200">untuk Bisnis Anda</span>
               </h2>
 
               {/* Bio text */}
