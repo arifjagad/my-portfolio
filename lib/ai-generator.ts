@@ -1,16 +1,19 @@
 /**
  * lib/ai-generator.ts
- * Generate HTML demo page via Google Gemini API
+ * Generate HTML demo page via Google Gemini API (dengan fallback ke OpenRouter)
  *
  * Strategi:
  * - Prompt struktural: scaffolding HTML diberikan, AI mengisi konten & style
  * - Negative prompt agresif untuk mencegah output generik
  * - Merge data mentah + enriched_data
  * - Retry otomatis 3x jika Gemini gagal
+ * - Fallback otomatis ke OpenRouter jika semua model Gemini habis
  * - Return HTML string siap pakai
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { OPENROUTER_MODELS } from "./openrouter-models";
+import { log, startLogSession } from "./generate-logger";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface BusinessData {
@@ -423,21 +426,9 @@ function enforceUniqueImageSources(
   });
 }
 
-// ─── SVG Icon Library ─────────────────────────────────────────────────────────
-// Berikan library SVG inline agar AI tidak perlu generate sendiri & tidak pakai emoji
-const SVG_ICONS = `
-<!-- SVG Icon Library - gunakan class "icon" pada svg -->
-<!-- scissors --> <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></svg>
-<!-- star --> <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-<!-- phone --> <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2 3h6l2 5-2.5 1.5a11 11 0 0 0 5 5L14 12l5 2v6a2 2 0 0 1-2 2A19 19 0 0 1 2 5a2 2 0 0 1 2-2"/></svg>
-<!-- location --> <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21s-8-6.25-8-11a8 8 0 1 1 16 0c0 4.75-8 11-8 11z"/><circle cx="12" cy="10" r="2" stroke-width="1.5"/></svg>
-<!-- clock --> <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6l4 2"/></svg>
-<!-- check --> <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-<!-- sparkles --> <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16 2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
-<!-- arrow-right --> <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7"/></svg>
-<!-- whatsapp --> <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-<!-- map --> <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13 6-3m-6 3V7m6 10 4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
-`;
+// ─── SVG icon names (ringkas, tidak perlu tulis raw HTML di prompt) ──────────
+// AI tahu SVG Heroicons/Lucide, cukup sebutkan nama ikon yang diizinkan
+const SVG_ICON_LIST = "scissors, star (filled), phone, location-pin, clock, check, sparkles, arrow-right, whatsapp-logo, map";
 
 // ─── Prompt builder ───────────────────────────────────────────────────────────
 function buildPrompt(biz: BusinessData, imageCandidates: ImageCandidate[] = []): string {
@@ -482,344 +473,103 @@ function buildPrompt(biz: BusinessData, imageCandidates: ImageCandidate[] = []):
         .join("\n")
     : "(UNSPLASH_API_UNAVAILABLE: gunakan URL direct images.unsplash.com/photo-... yang valid dan relevan.)";
 
-  // CSS Variables string untuk Tailwind config
-  const tailwindConfig = `
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '${config.warna.primary}',
-            secondary: '${config.warna.secondary}',
-            accent: '${config.warna.accent}',
-            brand: {
-              bg: '${config.warna.bg}',
-              text: '${config.warna.text}',
-              muted: '${config.warna.textMuted}',
-            }
-          },
-          fontFamily: {
-            heading: ['${config.fontHeading.split(":")[0].replace(/\+/g, " ")}', 'serif'],
-            body: ['${config.fontBody.split(":")[0].replace(/\+/g, " ")}', 'sans-serif'],
-          }
-        }
-      }
-    }
-  `;
-
   return `Kamu adalah world-class frontend engineer, conversion-focused copywriter, dan UI designer untuk website bisnis lokal Indonesia.
+Hasilkan SATU file HTML landing page agensi-grade sebagai halaman demo pitch client.
 
-Tugas: hasilkan SATU file HTML landing page yang terlihat seperti hasil agensi profesional (bukan template AI), siap dipakai sebagai halaman demo pitch client.
-
-=== DATA BISNIS ===
-Nama Bisnis   : ${biz.nama_bisnis}
-Kategori      : ${biz.kategori}
-Alamat        : ${biz.alamat || "Medan, Sumatera Utara"}
-Telepon       : ${biz.nomor_telepon || "-"}
-Rating        : ${ratingBadge || "Belum ada rating"}
-Jam Buka      : ${enriched?.jam_buka || "Hubungi kami untuk info jam operasional"}
-Deskripsi     : ${enriched?.deskripsi || ""}
-Layanan       :
+=== BISNIS ===
+Nama     : ${biz.nama_bisnis}
+Kategori : ${biz.kategori}
+Alamat   : ${biz.alamat || "Medan, Sumatera Utara"}
+Telepon  : ${biz.nomor_telepon || "-"}
+Rating   : ${ratingBadge || "Belum ada"}
+Jam Buka : ${enriched?.jam_buka || "Hubungi kami"}
+Deskripsi: ${enriched?.deskripsi || ""}
+Layanan  :
 ${layananList}
-Keunggulan    :
+Keunggulan:
 ${keunggulanList}
 
-=== VIBE & ESTETIKA ===
-${config.vibe}
+=== DESIGN THINKING & AESTHETICS ===
+Vibe    : ${config.vibe}
+Theme   : ${isDark ? "DARK" : "LIGHT"}
+Primary : ${config.warna.primary} | Secondary: ${config.warna.secondary} | Accent: ${config.warna.accent}
+BG      : ${config.warna.bg} | Text: ${config.warna.text} | Muted: ${config.warna.textMuted}
+Font    : Heading="${config.fontHeading.split(":")[0].replace(/\+/g, " ")}" Body="${config.fontBody.split(":")[0].replace(/\+/g, " ")}"
+Tagline : "${config.heroTagline}" (kembangkan lebih spesifik)
 
-=== TUJUAN BISNIS HALAMAN INI ===
-- Meningkatkan niat chat WhatsApp dari pengunjung baru
-- Menunjukkan kredibilitas bisnis lokal di Medan
-- Membuat owner merasa ini website layak dipakai untuk bisnis asli, bukan sekadar demo
+Aturan Estetika & Kreativitas:
+1. TONE COMMITMENT: Tentukan satu tone ekstrem yang kohesif (misal: brutalist/raw, luxury/refined, playful, industrial) berdasarkan Vibe. Eksekusi dengan presisi tinggi.
+2. DIFFERENTIATION: Buat satu hal yang UNFORGETTABLE. Jangan gunakan pattern komponen/layout template cookie-cutter yang gampang ditebak.
+3. SPATIAL COMPOSITION: Gunakan layout asimetris, overlap elemen, generous negative space (atau controlled density). Jangan hanya menumpuk kotak-kotak biasa.
+4. ATMOSPHERE: Jangan pakai background solid warna datar. Gunakan efek kontekstual: gradient mesh, noise texture tipis, pola geometris, transparansi berlapis, atau bayangan dramatis. 
 
-=== PALET WARNA (GUNAKAN PERSIS) ===
-Primary   : ${config.warna.primary}
-Secondary : ${config.warna.secondary}  
-Accent    : ${config.warna.accent}
-Background: ${config.warna.bg}
-Text      : ${config.warna.text}
-Text Muted: ${config.warna.textMuted}
-Mode      : ${isDark ? "DARK THEME" : "LIGHT THEME"}
-
-=== FONT (WAJIB) ===
-Heading: ${config.fontHeading.split(":")[0].replace(/\+/g, " ")}
-Body   : ${config.fontBody.split(":")[0].replace(/\+/g, " ")}
-
-=== STRUKTUR HALAMAN (WAJIB ADA SEMUA) ===
+=== STRUKTUR SECTION (WAJIB SEMUA ADA) ===
 ${config.komponen}
 
 === LINKS ===
-WhatsApp CTA : ${waLink}
-Google Maps  : ${mapsLink}
+WhatsApp: ${waLink}
+Maps    : ${mapsLink}
 
-=== TAGLINE INSPIRASI ===
-"${config.heroTagline}"
-(Kembangkan menjadi copy yang lebih unik & relevan dengan nama bisnis)
-
-=== GAMBAR / VISUAL ASSET (WAJIB REALISTIS, BUKAN KOTAK KOSONG) ===
-Daftar URL gambar Unsplash yang SUDAH divalidasi sistem:
+=== GAMBAR (WAJIB REALISTIS) ===
+Pool URL Unsplash tervalidasi:
 ${imagePoolText}
 
-- Gunakan minimal 5 gambar relevan, dan tambahkan sesuai kebutuhan layout (umumnya 6-12 gambar).
-- Komposisi wajib: 1 hero image, 2 service/lifestyle image, 1 about/team image, 1 gallery/ambience image.
-- Sumber yang diizinkan: Unsplash.
-- WAJIB prioritaskan URL dari daftar yang disediakan sistem di atas.
-- DILARANG membuat URL image sendiri jika daftar tersedia.
-- DILARANG pakai source.unsplash.com sebagai URL utama.
-- WAJIB gunakan src berbeda untuk tiap <img> (jangan ulang URL yang sama).
-- DILARANG pakai gambar random yang tidak relevan dengan kategori bisnis.
-- Setiap <img> wajib punya: loading="lazy", decoding="async", referrerpolicy="no-referrer", alt deskriptif berbahasa Indonesia, class object-cover.
-- Setiap <img> wajib punya fallback onerror, contoh:
-  onerror="this.onerror=null;this.src='${fallbackImageUrl}';"
-- Jika memilih tidak pakai foto untuk satu section, ganti dengan visual gradient/SVG dekoratif yang sengaja didesain (bukan placeholder box polos).
+Aturan gambar:
+- Min 5 gambar, prioritas dari pool di atas. Komposisi: 1 hero, 2 service/lifestyle, 1 about, 1 gallery.
+- Tiap <img>: loading="lazy" decoding="async" referrerpolicy="no-referrer" alt=[deskripsi-id] class="object-cover"
+- Tiap <img> wajib: onerror="this.onerror=null;this.src='${fallbackImageUrl}';"
+- Jangan ulang URL yang sama. Jangan hotlink selain Unsplash.
+- Jika skip foto di section → pakai gradient/SVG dekoratif (bukan box kosong).
 
-=== FRAMEWORK COPYWRITING (WAJIB) ===
-Gunakan alur pesan seperti ini:
-1) Hook cepat: masalah/keinginan utama customer lokal
-2) Value proposition: kenapa ${biz.nama_bisnis} lebih dipercaya
-3) Bukti sosial: rating/ulasan/testimoni singkat realistis
-4) CTA jelas: ajak chat WhatsApp sekarang
+=== COPYWRITING ===
+Alur: Hook (masalah lokal) → Value prop (kenapa ${biz.nama_bisnis}) → Sosial proof (rating/ulasan) → CTA WhatsApp.
+Bahasa Indonesia natural, hangat, profesional. Max 1-2 kalimat per blok. Hindari klaim bombastis.
 
-Aturan copy:
-- Bahasa Indonesia natural, hangat, profesional, tidak lebay.
-- Hindari klaim bombastis seperti "nomor 1 se-Indonesia".
-- Jika data tidak ada, gunakan teks netral yang realistis dan tidak mengada-ada.
-- Maksimal 1-2 kalimat per blok teks agar mudah scan di mobile.
+=== HEAD (WAJIB PERSIS) ===
+- <meta charset="UTF-8"> + viewport width=device-width,initial-scale=1.0
+- <title>${biz.nama_bisnis} — [tagline singkat]</title>
+- Google Fonts preconnect + link family=${config.fontHeading}&family=${config.fontBody}&display=swap
+- <script src="https://cdn.tailwindcss.com"></script>
+- Tailwind config script: colors {primary:"${config.warna.primary}",secondary:"${config.warna.secondary}",accent:"${config.warna.accent}",brand:{bg:"${config.warna.bg}",text:"${config.warna.text}",muted:"${config.warna.textMuted}"}}, fontFamily {heading:["${config.fontHeading.split(":")[0].replace(/\+/g, " ")}"],body:["${config.fontBody.split(":")[0].replace(/\+/g, " ")}"]}
+- <style> wajib berisi: * reset, html scroll-behavior:smooth, body font+bg+color, h1/h2/h3 font-heading, .icon{w-6 h-6 inline-block flex-shrink-0}, .noise::before{noise SVG data URI opacity:0.03}, .reveal{opacity:0 translateY(2rem) transition .7s}+.reveal.visible{opacity:1 translateY(0)}+delay variants 1-4, .wa-float{fixed bottom-8 right-8 z-9999 bg-#25d366 rounded-full px-6 py-3.5 flex gap-2 font-semibold shadow-lg transition}, .wa-float:hover{translateY(-3px)}, #navbar{transition bg+shadow}+#navbar.scrolled{bg:${isDark ? "rgba(13,13,13,.95)" : "rgba(255,255,255,.95)"} backdrop-blur-sm}, .deco-line{w-12 h-px bg-secondary mb-4}, .stars{color:#f59e0b}, @keyframes fade-up+float-soft+hover-lift
 
-=== PROSES KERJA INTERNAL (JANGAN DITAMPILKAN KE OUTPUT) ===
-Lakukan langkah ini secara internal sebelum menulis HTML final:
-1) Turunkan 3 konsep visual singkat dari vibe kategori.
-2) Pilih 1 konsep terbaik untuk bisnis ini.
-3) Susun wireframe section-by-section.
-4) Tulis HTML final.
-5) Audit hasil dengan checklist kualitas di bawah.
+=== ICONS ===
+Gunakan HANYA inline SVG (Heroicons/Lucide). JANGAN pakai emoji Unicode.
+Ikon diizinkan: ${SVG_ICON_LIST}. Tiap svg: class="icon" viewBox="0 0 24 24".
 
-Jangan tampilkan proses berpikir. Output hanya HTML final.
+=== FLOATING WA BUTTON (WAJIB) ===
+<a href="${waLink}" target="_blank" class="wa-float" aria-label="Chat WhatsApp">[svg whatsapp]<span>Chat via WhatsApp</span></a>
 
-=== ATURAN TEKNIS WAJIB ===
+=== SCRIPT SEBELUM </body> (WAJIB) ===
+1. Navbar: toggle class "scrolled" pada #navbar saat scrollY>50
+2. Scroll reveal: IntersectionObserver threshold:0.1 pada .reveal → add class "visible"
+3. Parallax: window scroll → style.transform translateY(scrollY*speed) pada [data-parallax]
+4. Smooth anchor: querySelectorAll('a[href^="#"]') → scrollIntoView({behavior:"smooth"})
 
-1. HEAD SECTION (template persis ini):
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${biz.nama_bisnis} — [tagline singkat]</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=${config.fontHeading}&family=${config.fontBody}&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    ${tailwindConfig}
-  </script>
-  <style>
-    /* CSS Custom ini WAJIB ada */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body { font-family: '${config.fontBody.split(":")[0].replace(/\+/g, " ")}', sans-serif; background: ${config.warna.bg}; color: ${config.warna.text}; }
-    h1, h2, h3, .font-heading { font-family: '${config.fontHeading.split(":")[0].replace(/\+/g, " ")}', serif; }
-    .icon { width: 1.5rem; height: 1.5rem; display: inline-block; flex-shrink: 0; }
-    
-    /* Noise texture overlay untuk depth */
-    .noise::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 1;
-    }
-    
-    /* Animasi scroll reveal */
-    .reveal { opacity: 0; transform: translateY(2rem); transition: opacity 0.7s ease, transform 0.7s ease; }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
-    .reveal-delay-1 { transition-delay: 0.1s; }
-    .reveal-delay-2 { transition-delay: 0.2s; }
-    .reveal-delay-3 { transition-delay: 0.3s; }
-    .reveal-delay-4 { transition-delay: 0.4s; }
-    
-    /* Floating WA button */
-    .wa-float {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      z-index: 9999;
-      background: #25d366;
-      color: white;
-      border-radius: 9999px;
-      padding: 0.875rem 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-weight: 600;
-      font-size: 0.875rem;
-      box-shadow: 0 8px 30px rgba(37,211,102,0.4);
-      text-decoration: none;
-      transition: all 0.3s ease;
-    }
-    .wa-float:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(37,211,102,0.5); }
-    .wa-float .icon { width: 1.25rem; height: 1.25rem; }
-    
-    /* Navbar */
-    #navbar { transition: background 0.3s ease, box-shadow 0.3s ease; }
-    #navbar.scrolled { background: ${isDark ? "rgba(13,13,13,0.95)" : "rgba(255,255,255,0.95)"} !important; backdrop-filter: blur(12px); box-shadow: 0 1px 20px rgba(0,0,0,0.08); }
+=== ATURAN KRITIS ===
+- HTML valid: DOCTYPE+html+head+body. No TODO/placeholder/debug. Hanya Tailwind CDN+GFonts+vanillaJS.
+- Mobile-first 360px+, max-w-6xl container, no overflow-x. Kontras terbaca, body min 16px.
+- Section IDs: #layanan #keunggulan #tentang #kontak.
+- HERO: min-h-screen, gradient/mesh bg (bukan flat solid), nama bisnis text-6xl+${ratingBadge ? `, badge rating "${ratingBadge}"` : ""}, 2 CTAs, decorative absolutes, hero image.
+- LAYANAN: bento (1 featured + beberapa kecil) atau alternating icon-teks, tiap item punya SVG icon.
+- KEUNGGULAN: bg kontras, grid 2x2 atau h-scroll, angka besar jika relevan.
+- KONTAK: location+phone+clock SVG, tombol WA mencolok, tombol Maps → ${mapsLink}.
+- FOOTER: bg primary, text kontras, nama+tagline+copyright.
 
-    /* Decorative line */
-    .deco-line { width: 3rem; height: 2px; background: ${config.warna.secondary}; display: block; margin-bottom: 1rem; }
-    
-    /* Star rating */
-    .stars { color: #f59e0b; display: inline-flex; gap: 2px; }
+=== LARANGAN ===
+DILARANG: emoji unicode | bg abu flat (#f5f5f5 dll) | border tebal default | tombol biru Tailwind (kecuali brand biru) | kartu identik semua | hero heading <text-5xl | Lorem ipsum | gambar box kosong | hotlink selain Unsplash | markdown fence output
 
-    /* Animasi halus yang terasa premium, bukan berlebihan */
-    @keyframes fade-up {
-      from { opacity: 0; transform: translateY(18px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-up { animation: fade-up 0.8s ease both; }
-
-    @keyframes float-soft {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
-    }
-    .float-soft { animation: float-soft 6s ease-in-out infinite; }
-
-    .hover-lift {
-      transition: transform 0.35s ease, box-shadow 0.35s ease;
-    }
-    .hover-lift:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.15);
-    }
-  </style>
-</head>
-
-2. SVG ICONS: Berikut adalah snippet SVG inline yang boleh kamu salin dan gunakan:
-${SVG_ICONS}
-Gunakan SVG di atas untuk semua ikon. Tidak perlu membuat SVG baru, cukup salin sesuai kebutuhan.
-
-3. FLOATING WHATSAPP BUTTON (template persis):
-<a href="${waLink}" target="_blank" class="wa-float" aria-label="Chat WhatsApp">
-  <!-- paste SVG whatsapp dari library di atas -->
-  <span>Chat via WhatsApp</span>
-</a>
-
-4. SCROLL REVEAL JS (template persis, taruh sebelum </body>):
-<script>
-  // Navbar scroll effect
-  const navbar = document.getElementById('navbar');
-  window.addEventListener('scroll', () => {
-    navbar.classList.toggle('scrolled', window.scrollY > 50);
-  });
-  
-  // Scroll reveal
-  const reveals = document.querySelectorAll('.reveal');
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
-  }, { threshold: 0.1 });
-  reveals.forEach(el => observer.observe(el));
-
-  // Sedikit parallax untuk elemen dekoratif
-  const parallaxEls = document.querySelectorAll('[data-parallax]');
-  window.addEventListener('scroll', () => {
-    const y = window.scrollY;
-    parallaxEls.forEach((el) => {
-      const speed = Number(el.getAttribute('data-parallax')) || 0.08;
-      el.style.transform = 'translateY(' + (y * speed) + 'px)';
-    });
-  });
-  
-  // Smooth scroll navbar links
-  document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', e => {
-      const target = document.querySelector(a.getAttribute('href'));
-      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
-    });
-  });
-</script>
-
-5. RESPONSIVE & ACCESSIBILITY (WAJIB):
-- Mobile-first: layout harus rapi mulai 360px.
-- Gunakan container dengan max-width yang konsisten (mis. max-w-6xl atau max-w-7xl).
-- Pastikan kontras teks terbaca jelas di semua section.
-- Semua tombol/link utama wajib punya hover, focus-visible, dan aria-label jika perlu.
-- Jangan gunakan ukuran font terlalu kecil (body minimal setara 16px).
-- Hindari section terlalu padat; beri whitespace yang cukup.
-
-6. STRUKTUR NAVBAR & SECTION ID (WAJIB):
-- Navbar berisi anchor ke section utama: #layanan, #keunggulan, #tentang, #kontak.
-- Setiap section wajib punya id yang benar agar smooth scroll berfungsi.
-
-7. KUALITAS KODE (WAJIB):
-- HTML valid dan lengkap: <!DOCTYPE html>, <html>, <head>, <body>.
-- Tidak ada komentar TODO, placeholder kosong, atau teks debugging.
-- Tidak ada dependency selain Tailwind CDN + Google Fonts + vanilla JS ringan.
-- Tidak boleh ada script eksternal lain.
-
-8. MICRO-ANIMATION (WAJIB HALUS):
-- Gunakan animasi seperlunya pada elemen penting: hero CTA, cards layanan, dan decorative accent.
-- Hindari animasi berulang yang mengganggu atau terlalu cepat.
-- Durasi ideal 300ms-900ms, easing smooth.
-- Hormati keterbacaan konten: animasi tidak boleh mengorbankan UX.
-
-=== LARANGAN KERAS (MELANGGAR = OUTPUT GAGAL) ===
-🚫 DILARANG emoji Unicode apapun (✂️ 💆 ⭐ 🌟 💅 🏪 dsb) — GUNAKAN SVG dari library di atas
-🚫 DILARANG background flat abu-abu (#f5f5f5, #f0f0f0, bg-gray-100) sebagai background utama section
-🚫 DILARANG card dengan border tebal default atau shadow hitam tebal box-shadow: 0 0 10px #000
-🚫 DILARANG tombol biru default Tailwind (bg-blue-500) kecuali memang warna brand-nya biru
-🚫 DILARANG layout kartu yang semua simetris sempurna — harus ada variasi ukuran, asimetri
-🚫 DILARANG heading hero kurang dari text-5xl (min text-6xl di desktop)
-🚫 DILARANG teks "Lorem ipsum" atau placeholder teks tidak bermakna
-🚫 DILARANG gambar kosong berupa box polos tanpa fungsi visual
-🚫 DILARANG hotlink gambar dari domain acak selain Unsplash/Pexels
-🚫 DILARANG membungkus output dalam markdown code fence (\`\`\`html)
-
-=== PANDUAN DESAIN PREMIUM ===
-
-HERO SECTION:
-- Min height: 100vh
-- Background: bukan warna solid flat. Gunakan: radial-gradient, linear-gradient bertumpuk, atau CSS mesh gradient menggunakan warna primary + secondary
-- Nama bisnis dalam font heading, SANGAT BESAR (clamp atau text-7xl)
-${ratingBadge ? `- Tampilkan badge rating: "${ratingBadge}" dalam pill/badge estetis` : ""}
-- Dua tombol CTA: utama (WhatsApp) + sekunder (scroll ke layanan)
-- Gunakan absolute positioned decorative elements (lingkaran, garis) sebagai background flair
-- Sertakan hero visual yang relevan (foto Unsplash/Pexels atau komposisi visual artistik), bukan kotak kosong
-
-SECTION LAYANAN:
-- Bukan grid kartu identik semua. Gunakan bento-like: 1 kartu besar featured + beberapa kartu kecil
-- Atau gunakan alternating list layout (icon kiri, teks kanan, bergantian)
-- Setiap layanan punya icon SVG dari library di atas
-
-SECTION KEUNGGULAN:
-- Background kontras dengan section sebelumnya (gelap jika sebelumnya terang, dsb)
-- 4 keunggulan dalam grid 2×2 atau horizontal scrollable
-- Angka/statistik besar jika relevan
-
-SECTION KONTAK:
-- Tampilkan: alamat (dengan ikon location SVG), telepon (dengan ikon phone SVG), jam buka (dengan ikon clock SVG)
-- Tombol WhatsApp yang mencolok
-- Tombol "Lihat di Google Maps" → href="${mapsLink}"
-
-FOOTER:
-- Background: warna primary
-- Text: warna kontras dengan primary
-- Nama bisnis, tagline singkat, copyright tahun ini
-
-=== QUALITY CHECKLIST (WAJIB LULUS SEBELUM OUTPUT) ===
-Pastikan hasil final memenuhi semua poin ini:
-- Terasa premium dan spesifik untuk kategori "${biz.kategori}", bukan template generik.
-- Hero kuat, hierarchy jelas, CTA langsung terlihat tanpa scroll jauh.
-- Ada diferensiasi visual antar section (warna, layout, ritme spacing).
-- Copy terasa manusiawi dan persuasif untuk audiens lokal Medan.
-- Mobile experience rapi: tidak ada overflow horizontal.
-- Semua link CTA valid: WhatsApp = ${waLink}, Maps = ${mapsLink}.
-- Visual tidak terlihat seperti placeholder box; gunakan foto relevan atau bentuk dekoratif yang intentional.
-- Animasi terasa halus dan profesional, bukan gimmick berlebihan.
-- Variasi gambar terlihat nyata: tidak ada URL <img> yang sama dipakai berulang.
+=== QUALITY CHECK ===
+- Premium & spesifik kategori "${biz.kategori}", bukan template generik
+- Hero kuat, CTA visible, diferensiasi visual antar section
+- Copy manusiawi & persuasif untuk audiens lokal Medan
+- No overflow horizontal, no URL <img> berulang, animasi halus
 
 === OUTPUT ===
-Kembalikan HANYA kode HTML lengkap.
-Mulai langsung dari <!DOCTYPE html>.
-Tanpa penjelasan.
-Tanpa markdown fence.
-Tanpa teks lain di luar HTML.`;
+Hanya kode HTML. Mulai dari <!DOCTYPE html>. Tanpa penjelasan, tanpa fence.`;
 }
+
+
 
 function injectImageFallbackScript(
   html: string,
@@ -863,118 +613,367 @@ function injectImageFallbackScript(
   return html.replace("</body>", `${fallbackScript}\n</body>`);
 }
 
-// ─── Main generator function ──────────────────────────────────────────────────
-export async function generateDemoHTML(
+// ─── HTML extractor helper ────────────────────────────────────────────────────
+function extractHTML(
+  text: string,
   biz: BusinessData,
-  options: { retries?: number } = {}
-): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY tidak ditemukan di env");
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-
-  const MODELS_TO_TRY = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
-  ];
-
-  const imageCandidates = await fetchUnsplashImageCandidates(biz, { maxImages: 24 });
-  if (imageCandidates.length === 0) {
-    console.warn("[AI Generator] Tidak mendapat kandidat image dari Unsplash API. Pastikan UNSPLASH_ACCESS_KEY valid.");
+  imageCandidates: ImageCandidate[]
+): string {
+  // Strip markdown code fence
+  if (text.includes("```")) {
+    text = text
+      .replace(/^```(?:html)?\s*\n?/im, "")
+      .replace(/\n?```\s*$/im, "")
+      .trim();
+    log("INFO", "Stripped markdown code fence dari response");
   }
-  const prompt = buildPrompt(biz, imageCandidates);
-  const maxRetries = options.retries ?? 3;
+
+  // Ekstrak HTML
+  const doctypeIdx = text.indexOf("<!DOCTYPE html>");
+  const htmlEndIdx = text.lastIndexOf("</html>");
+
+  if (doctypeIdx !== -1 && htmlEndIdx !== -1) {
+    const html = text.slice(doctypeIdx, htmlEndIdx + 7);
+    log("OK", `HTML diekstrak (dengan DOCTYPE): ${html.length} chars / ${(html.length / 1024).toFixed(1)} KB`);
+    const uniqueHtml = enforceUniqueImageSources(html, imageCandidates);
+    const finalHtml = injectImageFallbackScript(uniqueHtml, biz, imageCandidates);
+    log("OK", `Final HTML siap: ${finalHtml.length} chars / ${(finalHtml.length / 1024).toFixed(1)} KB`);
+    return finalHtml;
+  }
+
+  const htmlOpenIdx = text.indexOf("<html");
+  if (htmlOpenIdx !== -1 && htmlEndIdx !== -1) {
+    const html = text.slice(htmlOpenIdx, htmlEndIdx + 7);
+    log("WARN", `HTML diekstrak (tanpa DOCTYPE): ${html.length} chars`);
+    const uniqueHtml = enforceUniqueImageSources(html, imageCandidates);
+    const finalHtml = injectImageFallbackScript(uniqueHtml, biz, imageCandidates);
+    log("OK", `Final HTML siap: ${finalHtml.length} chars / ${(finalHtml.length / 1024).toFixed(1)} KB`);
+    return finalHtml;
+  }
+
+  log("WARN", `HTML tags tidak ditemukan! Returning raw text (${text.length} chars)`);
+  console.warn(`[AI Generator] HTML tags not found, returning raw text (${text.length} chars)`);
+  return injectImageFallbackScript(text, biz, imageCandidates);
+}
+
+// ─── OpenRouter generator (fallback semua model) ─────────────────────────────
+async function generateWithOpenRouter(
+  prompt: string,
+  biz: BusinessData,
+  imageCandidates: ImageCandidate[],
+  maxRetries = 2
+): Promise<string> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error("OPENROUTER_API_KEY tidak ditemukan di env");
+
   let lastError: Error | null = null;
 
-  for (const modelName of MODELS_TO_TRY) {
-    try {
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: {
-          temperature: 0.7,       // seimbang: tetap kreatif tapi lebih konsisten
-          topP: 0.9,
-          maxOutputTokens: 65536,
-        },
-      });
+  for (const model of OPENROUTER_MODELS) {
+    log("INFO", `[OpenRouter-fallback] Mencoba model: ${model.label} (${model.id})`);
+    console.log(`[OpenRouter] Mencoba model: ${model.label} (${model.id})`);
 
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          if (attempt > 1) {
-            console.log(`[AI Generator] (${modelName}) Retry ${attempt}/${maxRetries}...`);
-            await new Promise((r) => setTimeout(r, attempt * 5000));
-          }
-
-          console.log(`[AI Generator] Trying ${modelName}...`);
-          const result = await model.generateContent(prompt);
-          let text = result.response.text();
-
-          console.log(`[AI Generator] Raw response: ${text.length} chars`);
-
-          // Strip markdown code fence
-          if (text.includes("```")) {
-            text = text
-              .replace(/^```(?:html)?\s*\n?/im, "")
-              .replace(/\n?```\s*$/im, "")
-              .trim();
-          }
-
-          // Ekstrak HTML
-          const doctypeIdx = text.indexOf("<!DOCTYPE html>");
-          const htmlEndIdx = text.lastIndexOf("</html>");
-
-          if (doctypeIdx !== -1 && htmlEndIdx !== -1) {
-            const html = text.slice(doctypeIdx, htmlEndIdx + 7);
-            const uniqueHtml = enforceUniqueImageSources(html, imageCandidates);
-            const safeHtml = injectImageFallbackScript(uniqueHtml, biz, imageCandidates);
-            console.log(`[AI Generator] Extracted HTML: ${html.length} chars`);
-            return safeHtml;
-          }
-
-          const htmlOpenIdx = text.indexOf("<html");
-          if (htmlOpenIdx !== -1 && htmlEndIdx !== -1) {
-            const html = text.slice(htmlOpenIdx, htmlEndIdx + 7);
-            const uniqueHtml = enforceUniqueImageSources(html, imageCandidates);
-            const safeHtml = injectImageFallbackScript(uniqueHtml, biz, imageCandidates);
-            console.log(`[AI Generator] Extracted HTML (no DOCTYPE): ${html.length} chars`);
-            return safeHtml;
-          }
-
-          console.warn(`[AI Generator] HTML tags not found, returning raw text (${text.length} chars)`);
-          return injectImageFallbackScript(text, biz, imageCandidates);
-
-        } catch (err: any) {
-          lastError = err;
-          const msg: string = err?.message || "";
-          console.error(`[AI Generator] (${modelName}) Attempt ${attempt} failed:`, msg);
-
-          if (msg.includes("404") || msg.includes("is not found")) {
-            console.log(`[AI Generator] Model ${modelName} tidak tersedia, coba model berikutnya...`);
-            break;
-          }
-
-          const isRateLimit =
-            msg.includes("429") ||
-            msg.includes("quota") ||
-            msg.includes("RESOURCE_EXHAUSTED") ||
-            msg.includes("FreeTier");
-
-          if (isRateLimit) {
-            const waitMs = attempt * 15000;
-            console.log(`[AI Generator] Rate limit — tunggu ${waitMs / 1000}s...`);
-            await new Promise((r) => setTimeout(r, waitMs));
-          }
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 1) {
+          const waitSec = attempt * 5;
+          log("INFO", `[OpenRouter-fallback] (${model.id}) Retry ${attempt}/${maxRetries} — tunggu ${waitSec}s...`);
+          console.log(`[OpenRouter] (${model.id}) Retry ${attempt}/${maxRetries}...`);
+          await new Promise((r) => setTimeout(r, waitSec * 1000));
         }
+
+        log("INFO", `[OpenRouter-fallback] Mengirim request ke OpenRouter API...`);
+        const reqStart = Date.now();
+
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: model.id,
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: 65536,
+            temperature: 0.7,
+          }),
+        });
+
+        const elapsed = ((Date.now() - reqStart) / 1000).toFixed(1);
+        log("INFO", `[OpenRouter-fallback] Response HTTP ${res.status} diterima dalam ${elapsed}s`);
+
+        if (!res.ok) {
+          const errBody = await res.text();
+          const errMsg = `HTTP ${res.status}: ${errBody.slice(0, 200)}`;
+          log("ERROR", `[OpenRouter-fallback] (${model.id}) Request gagal: ${errMsg}`);
+          console.error(`[OpenRouter] (${model.id}) Gagal:`, errMsg);
+
+          if (res.status === 429) {
+            const waitMs = attempt * 15000;
+            log("WARN", `[OpenRouter-fallback] Rate limit — tunggu ${waitMs / 1000}s...`);
+            console.log(`[OpenRouter] Rate limit — tunggu ${waitMs / 1000}s...`);
+            lastError = new Error(errMsg);
+            await new Promise((r) => setTimeout(r, waitMs));
+            continue;
+          }
+
+          lastError = new Error(errMsg);
+          break;
+        }
+
+        const data = await res.json();
+        const text: string = data?.choices?.[0]?.message?.content ?? "";
+        log("INFO", `[OpenRouter-fallback] (${model.id}) Raw response: ${text.length} chars / ${(text.length / 1024).toFixed(1)} KB`);
+        console.log(`[OpenRouter] (${model.id}) Raw response: ${text.length} chars`);
+
+        if (!text) {
+          log("ERROR", `[OpenRouter-fallback] Response content kosong!`);
+          lastError = new Error("Response kosong dari OpenRouter");
+          break;
+        }
+
+        return extractHTML(text, biz, imageCandidates);
+
+      } catch (err: any) {
+        lastError = err;
+        log("ERROR", `[OpenRouter-fallback] (${model.id}) Attempt ${attempt} exception: ${err?.message}`);
+        console.error(`[OpenRouter] (${model.id}) Attempt ${attempt} error:`, err?.message);
       }
-    } catch (outerErr: any) {
-      lastError = outerErr;
-      console.error(`[AI Generator] Model ${modelName} outer error:`, outerErr?.message);
     }
   }
 
   throw new Error(
-    `Gagal generate dengan semua model. Error terakhir: ${lastError?.message}`
+    `Gagal generate dengan semua model OpenRouter. Error terakhir: ${lastError?.message}`
   );
+}
+
+// ─── Main generator function ──────────────────────────────────────────────────
+/**
+ * @param options.provider  - "gemini" (default, auto-fallback ke OpenRouter),
+ *                           atau model ID OpenRouter (misal "deepseek/deepseek-r1:free")
+ *                           untuk langsung pakai model tersebut tanpa coba Gemini.
+ */
+export async function generateDemoHTML(
+  biz: BusinessData,
+  options: { retries?: number; provider?: string } = {}
+): Promise<string> {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const openrouterKey = process.env.OPENROUTER_API_KEY;
+
+  if (!geminiKey && !openrouterKey) {
+    throw new Error("Tidak ada API key. Set GEMINI_API_KEY atau OPENROUTER_API_KEY di .env.local");
+  }
+
+  // ── Start log session ───────────────────────────────────────────────────────
+  startLogSession(biz.slug);
+  log("INFO", `Bisnis         : ${biz.nama_bisnis}`);
+  log("INFO", `Kategori       : ${biz.kategori}`);
+  log("INFO", `Rating         : ${biz.rating ?? "(kosong)"} (${biz.jumlah_ulasan} ulasan)`);
+  log("INFO", `Provider dipilih: ${options.provider ?? "gemini"}`);
+  log("INFO", `Gemini key     : ${geminiKey ? "✓ Ada" : "✗ Tidak ada"}`);
+  log("INFO", `OpenRouter key : ${openrouterKey ? "✓ Ada" : "✗ Tidak ada"}`);
+
+  // ── Ambil gambar Unsplash ────────────────────────────────────────────────────
+  log("INFO", "Mengambil kandidat gambar dari Unsplash API...");
+  const imageCandidates = await fetchUnsplashImageCandidates(biz, { maxImages: 24 });
+  if (imageCandidates.length === 0) {
+    log("WARN", "Tidak ada kandidat gambar dari Unsplash! Memakai URL fallback.");
+    console.warn("[AI Generator] Tidak mendapat kandidat image dari Unsplash API. Pastikan UNSPLASH_ACCESS_KEY valid.");
+  } else {
+    log("OK", `Unsplash: ${imageCandidates.length} gambar kandidat siap`);
+  }
+
+  // ── Build prompt ─────────────────────────────────────────────────────────────
+  const prompt = buildPrompt(biz, imageCandidates);
+  log("INFO", `Prompt dibangun: ${prompt.length} chars / ${(prompt.length / 1024).toFixed(1)} KB`);
+
+  const maxRetries = options.retries ?? 3;
+  const selectedProvider = options.provider ?? "gemini";
+  let lastError: Error | null = null;
+  const overallStart = Date.now();
+
+  // ── Jika user memilih model OpenRouter tertentu (bukan "gemini") ────────────
+  if (selectedProvider !== "gemini" && openrouterKey) {
+    log("INFO", `Mode: Direct OpenRouter → ${selectedProvider}`);
+    const targetModels = OPENROUTER_MODELS.filter((m) => m.id === selectedProvider);
+    if (targetModels.length === 0) {
+      const errMsg = `Model OpenRouter "${selectedProvider}" tidak ditemukan di openrouter-models.ts`;
+      log("ERROR", errMsg);
+      throw new Error(errMsg);
+    }
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 1) {
+          const waitSec = attempt * 5;
+          log("INFO", `(${selectedProvider}) Retry ${attempt}/${maxRetries} — tunggu ${waitSec}s...`);
+          await new Promise((r) => setTimeout(r, waitSec * 1000));
+        }
+
+        log("INFO", `Mengirim request ke OpenRouter (attempt ${attempt}/${maxRetries})...`);
+        log("INFO", `URL: https://openrouter.ai/api/v1/chat/completions`);
+        log("INFO", `Model: ${selectedProvider}  |  max_tokens: 65536  |  temperature: 0.7`);
+        const reqStart = Date.now();
+
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${openrouterKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: selectedProvider,
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: 65536,
+            temperature: 0.7,
+          }),
+        });
+
+        const elapsed = ((Date.now() - reqStart) / 1000).toFixed(1);
+        log("INFO", `Response HTTP ${res.status} diterima dalam ${elapsed}s`);
+
+        if (!res.ok) {
+          const errBody = await res.text();
+          const errMsg = `HTTP ${res.status}: ${errBody.slice(0, 300)}`;
+          log("ERROR", `Request gagal: ${errMsg}`);
+          throw new Error(errMsg);
+        }
+
+        const data = await res.json();
+        const text: string = data?.choices?.[0]?.message?.content ?? "";
+
+        // Log usage info jika ada
+        if (data?.usage) {
+          log("INFO", `Token usage — prompt: ${data.usage.prompt_tokens ?? "?"} | completion: ${data.usage.completion_tokens ?? "?"} | total: ${data.usage.total_tokens ?? "?"}`);
+        }
+
+        if (!text) {
+          log("ERROR", "Response content kosong dari OpenRouter!");
+          throw new Error("Response kosong dari OpenRouter");
+        }
+
+        log("INFO", `Raw response: ${text.length} chars / ${(text.length / 1024).toFixed(1)} KB`);
+
+        const result = extractHTML(text, biz, imageCandidates);
+        const totalElapsed = ((Date.now() - overallStart) / 1000).toFixed(1);
+        log("DONE", `Generate selesai! Total waktu: ${totalElapsed}s | HTML: ${(result.length / 1024).toFixed(1)} KB`);
+        return result;
+
+      } catch (err: any) {
+        lastError = err;
+        log("ERROR", `Attempt ${attempt} exception: ${err?.message}`);
+        console.error(`[OpenRouter] (${selectedProvider}) Attempt ${attempt} error:`, err?.message);
+      }
+    }
+
+    const errMsg = `Gagal generate dengan model "${selectedProvider}" setelah ${maxRetries} attempt. Error: ${lastError?.message}`;
+    log("ERROR", errMsg);
+    throw new Error(errMsg);
+  }
+
+  // ── Tahap 1: Coba semua model Gemini (default / provider="gemini") ──────────
+  log("INFO", "Mode: Gemini Auto (dengan fallback OpenRouter)");
+  let geminiExhausted = false;
+  if (geminiKey) {
+    const genAI = new GoogleGenerativeAI(geminiKey);
+
+    const GEMINI_MODELS = [
+      "gemini-2.5-flash",
+      "gemini-2.0-flash",
+      "gemini-2.0-flash-lite",
+    ];
+    log("INFO", `Gemini model list: ${GEMINI_MODELS.join(" → ")}`);
+
+    for (const modelName of GEMINI_MODELS) {
+      log("INFO", `─── Mencoba Gemini: ${modelName} ───`);
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            temperature: 0.7,
+            topP: 0.9,
+            maxOutputTokens: 65536,
+          },
+        });
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            if (attempt > 1) {
+              const waitSec = attempt * 5;
+              log("INFO", `(${modelName}) Retry ${attempt}/${maxRetries} — tunggu ${waitSec}s...`);
+              console.log(`[AI Generator] (${modelName}) Retry ${attempt}/${maxRetries}...`);
+              await new Promise((r) => setTimeout(r, waitSec * 1000));
+            }
+
+            log("INFO", `Mengirim ke Gemini (attempt ${attempt}/${maxRetries})...`);
+            const reqStart = Date.now();
+            console.log(`[AI Generator] Trying Gemini: ${modelName}...`);
+            const result = await model.generateContent(prompt);
+            const elapsed = ((Date.now() - reqStart) / 1000).toFixed(1);
+            let text = result.response.text();
+            log("INFO", `Gemini response diterima dalam ${elapsed}s — ${text.length} chars / ${(text.length / 1024).toFixed(1)} KB`);
+            console.log(`[AI Generator] Gemini raw response: ${text.length} chars`);
+
+            const html = extractHTML(text, biz, imageCandidates);
+            const totalElapsed = ((Date.now() - overallStart) / 1000).toFixed(1);
+            log("DONE", `Generate Gemini selesai! Total waktu: ${totalElapsed}s | HTML: ${(html.length / 1024).toFixed(1)} KB`);
+            return html;
+
+          } catch (err: any) {
+            lastError = err;
+            const msg: string = err?.message || "";
+            log("ERROR", `(${modelName}) Attempt ${attempt} gagal: ${msg.slice(0, 200)}`);
+            console.error(`[AI Generator] (${modelName}) Attempt ${attempt} failed:`, msg);
+
+            if (msg.includes("404") || msg.includes("is not found")) {
+              log("WARN", `Model ${modelName} tidak tersedia (404), beralih ke model berikutnya...`);
+              console.log(`[AI Generator] Model ${modelName} tidak tersedia, coba model berikutnya...`);
+              break;
+            }
+
+            const isRateLimit =
+              msg.includes("429") ||
+              msg.includes("quota") ||
+              msg.includes("RESOURCE_EXHAUSTED") ||
+              msg.includes("FreeTier");
+
+            if (isRateLimit) {
+              const waitSec = attempt * 15;
+              log("WARN", `Rate limit Gemini — tunggu ${waitSec}s...`);
+              console.log(`[AI Generator] Rate limit — tunggu ${waitSec}s...`);
+              await new Promise((r) => setTimeout(r, waitSec * 1000));
+            }
+          }
+        }
+      } catch (outerErr: any) {
+        lastError = outerErr;
+        log("ERROR", `Model ${modelName} outer error: ${outerErr?.message}`);
+        console.error(`[AI Generator] Model ${modelName} outer error:`, outerErr?.message);
+      }
+    }
+
+    geminiExhausted = true;
+    log("WARN", "Semua model Gemini gagal. Beralih ke OpenRouter sebagai fallback...");
+    console.warn("[AI Generator] Semua model Gemini gagal. Beralih ke OpenRouter...");
+  }
+
+  // ── Tahap 2: Fallback ke OpenRouter ─────────────────────────────────────────
+  if (openrouterKey) {
+    log("INFO", "─── OpenRouter Fallback (semua model dari openrouter-models.ts) ───");
+    try {
+      return await generateWithOpenRouter(prompt, biz, imageCandidates, maxRetries);
+    } catch (orErr: any) {
+      lastError = orErr;
+      log("ERROR", `OpenRouter fallback juga gagal: ${orErr?.message}`);
+      console.error("[AI Generator] OpenRouter juga gagal:", orErr?.message);
+    }
+  } else if (geminiExhausted) {
+    log("WARN", "OPENROUTER_API_KEY tidak ada — tidak ada fallback tersisa.");
+    console.warn("[AI Generator] OPENROUTER_API_KEY tidak ada; tidak ada fallback.");
+  }
+
+  const finalErr = `Gagal generate dengan semua provider (Gemini + OpenRouter). Error terakhir: ${lastError?.message}`;
+  log("ERROR", finalErr);
+  throw new Error(finalErr);
 }
 
 export { buildPrompt };

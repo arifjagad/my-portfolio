@@ -7,6 +7,8 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Select, { type GroupBase, type StylesConfig, type SingleValue } from "react-select";
+import { OPENROUTER_MODELS } from "@/lib/openrouter-models";
 
 interface Business {
   id: string;
@@ -34,6 +36,94 @@ const PITCH_OPTIONS = [
   { value: "deal", label: "✓ Deal", color: "text-emerald-400" },
   { value: "tidak_tertarik", label: "Tidak Tertarik", color: "text-red-400" },
 ];
+
+// ── react-select types ────────────────────────────────────────────────
+type ModelOption = { value: string; label: string; ctx?: number; group: "gemini" | "openrouter" };
+type ModelGroup  = GroupBase<ModelOption>;
+
+const MODEL_OPTIONS: ModelGroup[] = [
+  {
+    label: "── Google Gemini ──",
+    options: [
+      { value: "gemini", label: "✦ Gemini (Auto + Fallback)", group: "gemini" },
+    ],
+  },
+  {
+    label: "── OpenRouter Models ──",
+    options: OPENROUTER_MODELS.map((m) => ({
+      value: m.id,
+      label: m.label,
+      ctx: m.contextWindow,
+      group: "openrouter" as const,
+    })),
+  },
+];
+
+const SELECT_STYLES: StylesConfig<ModelOption, false, ModelGroup> = {
+  control: (base, state) => ({
+    ...base,
+    background: "#0b1120",
+    borderColor: state.isFocused ? "#2d6a4f" : "#1e2d45",
+    borderRadius: "0.5rem",
+    boxShadow: state.isFocused ? "0 0 0 1px #2d6a4f" : "none",
+    minHeight: "36px",
+    fontSize: "0.75rem",
+    fontFamily: "ui-monospace, SFMono-Regular, monospace",
+    cursor: "pointer",
+    "&:hover": { borderColor: "#2d6a4f" },
+  }),
+  valueContainer: (base) => ({ ...base, padding: "2px 10px" }),
+  singleValue: (base) => ({ ...base, color: "#e2e8f0" }),
+  placeholder: (base) => ({ ...base, color: "#475569", fontSize: "0.75rem" }),
+  input: (base) => ({ ...base, color: "#e2e8f0", fontSize: "0.75rem", fontFamily: "ui-monospace, SFMono-Regular, monospace" }),
+  indicatorSeparator: () => ({ display: "none" }),
+  dropdownIndicator: (base, state) => ({
+    ...base,
+    color: state.isFocused ? "#94a3b8" : "#475569",
+    padding: "4px 8px",
+    "&:hover": { color: "#94a3b8" },
+  }),
+  menu: (base) => ({
+    ...base,
+    background: "#0d1929",
+    border: "1px solid #1e2d45",
+    borderRadius: "0.75rem",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+    overflow: "hidden",
+    zIndex: 50,
+  }),
+  menuList: (base) => ({ ...base, padding: "4px", maxHeight: "340px" }),
+  group: (base) => ({ ...base, padding: 0 }),
+  groupHeading: (base) => ({
+    ...base,
+    color: "#475569",
+    fontSize: "0.65rem",
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    padding: "8px 10px 4px",
+    fontFamily: "ui-monospace, SFMono-Regular, monospace",
+  }),
+  option: (base, state) => ({
+    ...base,
+    background: state.isSelected
+      ? "#1e3a5f"
+      : state.isFocused
+      ? "#172035"
+      : "transparent",
+    color: state.isSelected ? "#bae6fd" : "#94a3b8",
+    borderRadius: "0.4rem",
+    fontSize: "0.72rem",
+    fontFamily: "ui-monospace, SFMono-Regular, monospace",
+    padding: "6px 10px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "8px",
+  }),
+  noOptionsMessage: (base) => ({ ...base, color: "#475569", fontSize: "0.75rem" }),
+};
 
 export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
   const router = useRouter();
@@ -66,6 +156,40 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
   const [previewMode, setPreviewMode] = useState<"iframe" | "none">(
     biz.generated_html ? "iframe" : "none"
   );
+  // Model AI selector: "gemini" = default Gemini + auto-fallback OpenRouter
+  const [selectedProvider, setSelectedProvider] = useState<string>("gemini");
+
+  // ── Live log viewer ────────────────────────────────────────────
+  const [logLines, setLogLines] = useState<string[]>([]);
+  const logEndRef = useRef<HTMLDivElement>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  async function fetchLogs() {
+    try {
+      const res = await fetch("/api/demo/generate-log?lines=150");
+      if (!res.ok) return;
+      const data = await res.json();
+      setLogLines(data.lines || []);
+      // Auto-scroll ke bawah
+      setTimeout(() => logEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    } catch {
+      // silent
+    }
+  }
+
+  function startLogPolling() {
+    fetchLogs();
+    pollRef.current = setInterval(fetchLogs, 2000);
+  }
+
+  function stopLogPolling() {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    // Final fetch untuk ambil log akhir
+    fetchLogs();
+  }
 
   function showToast(msg: string, type: "success" | "error" = "success") {
     setToast({ msg, type });
@@ -112,6 +236,8 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
   async function handleGenerate(force = false) {
     setGenerating(true);
     setPreviewMode("none");
+    setLogLines([]);
+    startLogPolling();
     try {
       // Save enrichment dulu
       await fetch("/api/demo/enrich", {
@@ -124,7 +250,7 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
       const res = await fetch("/api/demo/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: biz.slug, force }),
+        body: JSON.stringify({ slug: biz.slug, force, provider: selectedProvider }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -151,6 +277,7 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
     } catch (err: any) {
       showToast(err.message || "Generate gagal", "error");
     } finally {
+      stopLogPolling();
       setGenerating(false);
     }
   }
@@ -446,7 +573,67 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
               {saving ? "Menyimpan..." : "Simpan Enrichment"}
             </button>
 
-            {!biz.generated_html ? (
+            {/* Model AI Selector */}
+          <div className="rounded-xl border border-navy-900 bg-navy-950/40 p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500 shrink-0">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+              </svg>
+              <span className="text-xs font-medium text-slate-400">Model AI</span>
+              <span className={`ml-auto text-xs px-1.5 py-0.5 rounded border font-mono ${
+                selectedProvider === "gemini"
+                  ? "bg-sky-900/40 border-sky-800/50 text-sky-400"
+                  : "bg-violet-900/40 border-violet-800/50 text-violet-400"
+              }`}>
+                {selectedProvider === "gemini" ? "Gemini" : "OpenRouter"}
+              </span>
+            </div>
+
+            <Select<ModelOption, false, ModelGroup>
+              inputId="model-selector"
+              options={MODEL_OPTIONS}
+              styles={SELECT_STYLES}
+              isDisabled={generating || saving}
+              isSearchable
+              placeholder="Pilih model AI..."
+              value={
+                MODEL_OPTIONS.flatMap((g) => g.options).find(
+                  (o) => o.value === selectedProvider
+                ) ?? null
+              }
+              onChange={(opt: SingleValue<ModelOption>) => {
+                if (opt) setSelectedProvider(opt.value);
+              }}
+              formatOptionLabel={(opt: ModelOption) => (
+                <div className="flex items-center justify-between w-full gap-2">
+                  <span>{opt.label}</span>
+                  {opt.ctx && (
+                    <span style={{
+                      fontSize: "0.6rem",
+                      padding: "1px 5px",
+                      borderRadius: "4px",
+                      background: "#1e2d45",
+                      color: "#64748b",
+                      whiteSpace: "nowrap",
+                      fontFamily: "ui-monospace, monospace",
+                    }}>
+                      {opt.ctx >= 1000000
+                        ? `${(opt.ctx / 1000000).toFixed(0)}M ctx`
+                        : `${(opt.ctx / 1000).toFixed(0)}K ctx`}
+                    </span>
+                  )}
+                </div>
+              )}
+              noOptionsMessage={() => "Model tidak ditemukan"}
+            />
+
+            {selectedProvider === "gemini" && (
+              <p className="text-xs text-slate-700">Coba Gemini 2.5/2.0 Flash, fallback otomatis ke OpenRouter jika limit.</p>
+            )}
+          </div>
+
+          {!biz.generated_html ? (
               <button
                 id="btn-generate"
                 onClick={() => handleGenerate(false)}
@@ -563,13 +750,58 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
             )}
           </div>
 
-          <div className="rounded-xl border border-navy-900 overflow-hidden bg-navy-950/20" style={{ height: "1525px" }}>
+          <div className="rounded-xl border border-navy-900 overflow-hidden bg-navy-950/20" style={{ height: "1650px" }}>
             {generating ? (
-              <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-600">
-                <div className="w-10 h-10 rounded-full border-2 border-forest-700/30 border-t-forest-500 animate-spin" />
-                <div className="text-center space-y-1">
-                  <p className="text-sm font-medium text-slate-400">Generating dengan Gemini AI...</p>
-                  <p className="text-xs">Estimasi 15–30 detik</p>
+              <div className="h-full flex flex-col gap-0 overflow-hidden">
+                {/* Header log panel */}
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-navy-900 bg-navy-950/60 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs font-mono text-slate-400">Generate Log — Live</span>
+                  </div>
+                  <span className="text-xs text-slate-600 font-mono">
+                    {selectedProvider === "gemini" ? "Gemini AI" : selectedProvider}
+                  </span>
+                </div>
+
+                {/* Log output */}
+                <div className="flex-1 overflow-y-auto p-3 font-mono text-xs leading-5 bg-[#0a0d12]">
+                  {logLines.length === 0 ? (
+                    <div className="flex items-center gap-2 text-slate-600 mt-4 justify-center">
+                      <span className="w-4 h-4 rounded-full border-2 border-slate-700 border-t-slate-500 animate-spin" />
+                      Menunggu log pertama...
+                    </div>
+                  ) : (
+                    logLines.map((line, idx) => {
+                      const isError = line.includes("[ERROR]");
+                      const isWarn  = line.includes("[WARN ");
+                      const isOk    = line.includes("[OK   ]");
+                      const isDone  = line.includes("[DONE ");
+                      const isStart = line.includes("[START]");
+                      return (
+                        <div
+                          key={idx}
+                          className={`whitespace-pre-wrap break-all ${
+                            isError ? "text-red-400" :
+                            isWarn  ? "text-amber-400" :
+                            isOk    ? "text-emerald-400" :
+                            isDone  ? "text-emerald-300 font-semibold" :
+                            isStart ? "text-sky-400" :
+                            "text-slate-500"
+                          }`}
+                        >
+                          {line}
+                        </div>
+                      );
+                    })
+                  )}
+                  <div ref={logEndRef} />
+                </div>
+
+                {/* Footer spinner */}
+                <div className="shrink-0 px-4 py-2 border-t border-navy-900 bg-navy-950/40 flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full border-2 border-forest-700/40 border-t-forest-500 animate-spin" />
+                  <span className="text-xs text-slate-600">Proses berjalan... bisa memakan 30–180 detik</span>
                 </div>
               </div>
             ) : biz.generated_html && previewMode === "iframe" ? (

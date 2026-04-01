@@ -1,8 +1,8 @@
 /**
  * app/api/demo/generate/route.ts
  * POST /api/demo/generate
- * Body: { slug: string, force?: boolean }
- * Generate atau regenerate HTML via Gemini untuk satu bisnis
+ * Body: { slug: string, force?: boolean, provider?: string }
+ * Generate atau regenerate HTML via Gemini / OpenRouter untuk satu bisnis
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -19,7 +19,7 @@ function getServiceClient() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { slug, force = false } = body;
+    const { slug, force = false, provider } = body;
 
     if (!slug) {
       return NextResponse.json({ error: "slug wajib diisi" }, { status: 400 });
@@ -52,17 +52,20 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate HTML
-    const html = await generateDemoHTML({
-      slug: biz.slug,
-      nama_bisnis: biz.nama_bisnis,
-      kategori: biz.kategori,
-      rating: biz.rating,
-      jumlah_ulasan: biz.jumlah_ulasan,
-      nomor_telepon: biz.nomor_telepon,
-      alamat: biz.alamat,
-      link_gmaps: biz.link_gmaps,
-      enriched_data: biz.enriched_data,
-    });
+    const html = await generateDemoHTML(
+      {
+        slug: biz.slug,
+        nama_bisnis: biz.nama_bisnis,
+        kategori: biz.kategori,
+        rating: biz.rating,
+        jumlah_ulasan: biz.jumlah_ulasan,
+        nomor_telepon: biz.nomor_telepon,
+        alamat: biz.alamat,
+        link_gmaps: biz.link_gmaps,
+        enriched_data: biz.enriched_data,
+      },
+      { provider }
+    );
 
     const newVersion = (biz.generation_version || 0) + 1;
     const generatedAt = new Date().toISOString();
