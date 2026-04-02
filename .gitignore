@@ -41,5 +41,5 @@ yarn-error.log*
 next-env.d.ts
 
 # AI generate logs (keep folder, ignore log contents)
-/logs/*.log
-!/logs/.gitkeep
+# /logs/*.log
+# !/logs/.gitkeep

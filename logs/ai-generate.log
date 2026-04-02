@@ -1,0 +1,290 @@
+[01-04-2026 15.53.56.419] [START] [acheng-bikers@1775033636417] ════════════════════════════════════════════════════════════
+[01-04-2026 15.53.56.421] [START] [acheng-bikers@1775033636417] Sesi baru dimulai — bisnis: acheng-bikers
+[01-04-2026 15.53.56.422] [START] [acheng-bikers@1775033636417] Session ID: acheng-bikers@1775033636417
+[01-04-2026 15.53.56.423] [INFO ] [acheng-bikers@1775033636417] Bisnis         : Acheng Bikers
+[01-04-2026 15.53.56.424] [INFO ] [acheng-bikers@1775033636417] Kategori       : Bengkel Sepeda Motor
+[01-04-2026 15.53.56.425] [INFO ] [acheng-bikers@1775033636417] Rating         : 5 (21 ulasan)
+[01-04-2026 15.53.56.426] [INFO ] [acheng-bikers@1775033636417] Provider dipilih: google/gemini-2.5-flash-preview:thinking
+[01-04-2026 15.53.56.427] [INFO ] [acheng-bikers@1775033636417] Gemini key     : ✓ Ada
+[01-04-2026 15.53.56.428] [INFO ] [acheng-bikers@1775033636417] OpenRouter key : ✓ Ada
+[01-04-2026 15.53.56.430] [INFO ] [acheng-bikers@1775033636417] Mengambil kandidat gambar dari Unsplash API...
+[01-04-2026 15.53.56.435] [OK   ] [acheng-bikers@1775033636417] Unsplash: 24 gambar kandidat siap
+[01-04-2026 15.53.56.437] [INFO ] [acheng-bikers@1775033636417] Prompt dibangun: 26459 chars / 25.8 KB
+[01-04-2026 15.53.56.437] [INFO ] [acheng-bikers@1775033636417] Mode: Direct OpenRouter → google/gemini-2.5-flash-preview:thinking
+[01-04-2026 15.53.56.439] [INFO ] [acheng-bikers@1775033636417] Mengirim request ke OpenRouter (attempt 1/3)...
+[01-04-2026 15.53.56.440] [INFO ] [acheng-bikers@1775033636417] URL: https://openrouter.ai/api/v1/chat/completions
+[01-04-2026 15.53.56.441] [INFO ] [acheng-bikers@1775033636417] Model: google/gemini-2.5-flash-preview:thinking  |  max_tokens: 65536  |  temperature: 0.7
+[01-04-2026 15.53.56.938] [INFO ] [acheng-bikers@1775033636417] Response HTTP 400 diterima dalam 0.5s
+[01-04-2026 15.53.56.942] [ERROR] [acheng-bikers@1775033636417] Request gagal: HTTP 400: {"error":{"message":"google/gemini-2.5-flash-preview:thinking is not a valid model ID","code":400},"user_id":"user_2py18SsLAEznYfqKwUIIrLr5kpi"}
+[01-04-2026 15.53.56.944] [ERROR] [acheng-bikers@1775033636417] Attempt 1 exception: HTTP 400: {"error":{"message":"google/gemini-2.5-flash-preview:thinking is not a valid model ID","code":400},"user_id":"user_2py18SsLAEznYfqKwUIIrLr5kpi"}
+[01-04-2026 15.53.56.947] [INFO ] [acheng-bikers@1775033636417] (google/gemini-2.5-flash-preview:thinking) Retry 2/3 — tunggu 10s...
+[01-04-2026 15.54.06.961] [INFO ] [acheng-bikers@1775033636417] Mengirim request ke OpenRouter (attempt 2/3)...
+[01-04-2026 15.54.06.962] [INFO ] [acheng-bikers@1775033636417] URL: https://openrouter.ai/api/v1/chat/completions
+[01-04-2026 15.54.06.964] [INFO ] [acheng-bikers@1775033636417] Model: google/gemini-2.5-flash-preview:thinking  |  max_tokens: 65536  |  temperature: 0.7
+[01-04-2026 15.54.07.172] [INFO ] [acheng-bikers@1775033636417] Response HTTP 400 diterima dalam 0.2s
+[01-04-2026 15.54.07.175] [ERROR] [acheng-bikers@1775033636417] Request gagal: HTTP 400: {"error":{"message":"google/gemini-2.5-flash-preview:thinking is not a valid model ID","code":400},"user_id":"user_2py18SsLAEznYfqKwUIIrLr5kpi"}
+[01-04-2026 15.54.07.175] [ERROR] [acheng-bikers@1775033636417] Attempt 2 exception: HTTP 400: {"error":{"message":"google/gemini-2.5-flash-preview:thinking is not a valid model ID","code":400},"user_id":"user_2py18SsLAEznYfqKwUIIrLr5kpi"}
+[01-04-2026 15.54.07.178] [INFO ] [acheng-bikers@1775033636417] (google/gemini-2.5-flash-preview:thinking) Retry 3/3 — tunggu 15s...
+[01-04-2026 15.54.15.265] [START] [acheng-bikers@1775033655265] ════════════════════════════════════════════════════════════
+[01-04-2026 15.54.15.266] [START] [acheng-bikers@1775033655265] Sesi baru dimulai — bisnis: acheng-bikers
+[01-04-2026 15.54.15.267] [START] [acheng-bikers@1775033655265] Session ID: acheng-bikers@1775033655265
+[01-04-2026 15.54.15.268] [INFO ] [acheng-bikers@1775033655265] Bisnis         : Acheng Bikers
+[01-04-2026 15.54.15.269] [INFO ] [acheng-bikers@1775033655265] Kategori       : Bengkel Sepeda Motor
+[01-04-2026 15.54.15.270] [INFO ] [acheng-bikers@1775033655265] Rating         : 5 (21 ulasan)
+[01-04-2026 15.54.15.271] [INFO ] [acheng-bikers@1775033655265] Provider dipilih: gemini
+[01-04-2026 15.54.15.271] [INFO ] [acheng-bikers@1775033655265] Gemini key     : ✓ Ada
+[01-04-2026 15.54.15.272] [INFO ] [acheng-bikers@1775033655265] OpenRouter key : ✓ Ada
+[01-04-2026 15.54.15.273] [INFO ] [acheng-bikers@1775033655265] Mengambil kandidat gambar dari Unsplash API...
+[01-04-2026 15.54.15.276] [OK   ] [acheng-bikers@1775033655265] Unsplash: 24 gambar kandidat siap
+[01-04-2026 15.54.15.277] [INFO ] [acheng-bikers@1775033655265] Prompt dibangun: 26459 chars / 25.8 KB
+[01-04-2026 15.54.15.277] [INFO ] [acheng-bikers@1775033655265] Mode: Gemini Auto (dengan fallback OpenRouter)
+[01-04-2026 15.54.15.278] [INFO ] [acheng-bikers@1775033655265] Gemini model list: gemini-2.5-flash → gemini-2.0-flash → gemini-2.0-flash-lite
+[01-04-2026 15.54.15.279] [INFO ] [acheng-bikers@1775033655265] ─── Mencoba Gemini: gemini-2.5-flash ───
+[01-04-2026 15.54.15.280] [INFO ] [acheng-bikers@1775033655265] Mengirim ke Gemini (attempt 1/3)...
+[01-04-2026 15.54.22.182] [INFO ] [acheng-bikers@1775033655265] Mengirim request ke OpenRouter (attempt 3/3)...
+[01-04-2026 15.54.22.183] [INFO ] [acheng-bikers@1775033655265] URL: https://openrouter.ai/api/v1/chat/completions
+[01-04-2026 15.54.22.184] [INFO ] [acheng-bikers@1775033655265] Model: google/gemini-2.5-flash-preview:thinking  |  max_tokens: 65536  |  temperature: 0.7
+[01-04-2026 15.54.22.305] [INFO ] [acheng-bikers@1775033655265] Response HTTP 400 diterima dalam 0.1s
+[01-04-2026 15.54.22.308] [ERROR] [acheng-bikers@1775033655265] Request gagal: HTTP 400: {"error":{"message":"google/gemini-2.5-flash-preview:thinking is not a valid model ID","code":400},"user_id":"user_2py18SsLAEznYfqKwUIIrLr5kpi"}
+[01-04-2026 15.54.22.310] [ERROR] [acheng-bikers@1775033655265] Attempt 3 exception: HTTP 400: {"error":{"message":"google/gemini-2.5-flash-preview:thinking is not a valid model ID","code":400},"user_id":"user_2py18SsLAEznYfqKwUIIrLr5kpi"}
+[01-04-2026 15.54.22.312] [ERROR] [acheng-bikers@1775033655265] Gagal generate dengan model "google/gemini-2.5-flash-preview:thinking" setelah 3 attempt. Error: HTTP 400: {"error":{"message":"google/gemini-2.5-flash-preview:thinking is not a valid model ID","code":400},"user_id":"user_2py18SsLAEznYfqKwUIIrLr5kpi"}
+[01-04-2026 15.54.42.978] [START] [acheng-bikers@1775033682978] ════════════════════════════════════════════════════════════
+[01-04-2026 15.54.42.979] [START] [acheng-bikers@1775033682978] Sesi baru dimulai — bisnis: acheng-bikers
+[01-04-2026 15.54.42.980] [START] [acheng-bikers@1775033682978] Session ID: acheng-bikers@1775033682978
+[01-04-2026 15.54.42.980] [INFO ] [acheng-bikers@1775033682978] Bisnis         : Acheng Bikers
+[01-04-2026 15.54.42.981] [INFO ] [acheng-bikers@1775033682978] Kategori       : Bengkel Sepeda Motor
+[01-04-2026 15.54.42.982] [INFO ] [acheng-bikers@1775033682978] Rating         : 5 (21 ulasan)
+[01-04-2026 15.54.42.983] [INFO ] [acheng-bikers@1775033682978] Provider dipilih: gemini
+[01-04-2026 15.54.42.983] [INFO ] [acheng-bikers@1775033682978] Gemini key     : ✓ Ada
+[01-04-2026 15.54.42.984] [INFO ] [acheng-bikers@1775033682978] OpenRouter key : ✓ Ada
+[01-04-2026 15.54.42.985] [INFO ] [acheng-bikers@1775033682978] Mengambil kandidat gambar dari Unsplash API...
+[01-04-2026 15.54.42.989] [OK   ] [acheng-bikers@1775033682978] Unsplash: 24 gambar kandidat siap
+[01-04-2026 15.54.42.990] [INFO ] [acheng-bikers@1775033682978] Prompt dibangun: 26459 chars / 25.8 KB
+[01-04-2026 15.54.42.990] [INFO ] [acheng-bikers@1775033682978] Mode: Gemini Auto (dengan fallback OpenRouter)
+[01-04-2026 15.54.42.991] [INFO ] [acheng-bikers@1775033682978] Gemini model list: gemini-2.5-flash → gemini-2.0-flash → gemini-2.0-flash-lite
+[01-04-2026 15.54.42.992] [INFO ] [acheng-bikers@1775033682978] ─── Mencoba Gemini: gemini-2.5-flash ───
+[01-04-2026 15.54.42.992] [INFO ] [acheng-bikers@1775033682978] Mengirim ke Gemini (attempt 1/3)...
+[01-04-2026 15.55.45.909] [INFO ] [acheng-bikers@1775033682978] Gemini response diterima dalam 90.6s — 34240 chars / 33.4 KB
+[01-04-2026 15.55.45.912] [OK   ] [acheng-bikers@1775033682978] HTML diekstrak (dengan DOCTYPE): 34240 chars / 33.4 KB
+[01-04-2026 15.55.45.915] [OK   ] [acheng-bikers@1775033682978] Final HTML siap: 41084 chars / 40.1 KB
+[01-04-2026 15.55.45.916] [DONE ] [acheng-bikers@1775033682978] Generate Gemini selesai! Total waktu: 90.6s | HTML: 40.1 KB
+[01-04-2026 15.55.52.337] [INFO ] [acheng-bikers@1775033682978] Gemini response diterima dalam 69.3s — 30916 chars / 30.2 KB
+[01-04-2026 15.55.52.339] [OK   ] [acheng-bikers@1775033682978] HTML diekstrak (dengan DOCTYPE): 30916 chars / 30.2 KB
+[01-04-2026 15.55.52.341] [OK   ] [acheng-bikers@1775033682978] Final HTML siap: 37760 chars / 36.9 KB
+[01-04-2026 15.55.52.342] [DONE ] [acheng-bikers@1775033682978] Generate Gemini selesai! Total waktu: 69.4s | HTML: 36.9 KB
+[01-04-2026 16.12.29.861] [START] [king-style-barbershop@1775034749861] ════════════════════════════════════════════════════════════
+[01-04-2026 16.12.29.863] [START] [king-style-barbershop@1775034749861] Sesi baru dimulai — bisnis: king-style-barbershop
+[01-04-2026 16.12.29.865] [START] [king-style-barbershop@1775034749861] Session ID: king-style-barbershop@1775034749861
+[01-04-2026 16.12.29.867] [INFO ] [king-style-barbershop@1775034749861] Bisnis         : KING STYLE BARBERSHOP
+[01-04-2026 16.12.29.869] [INFO ] [king-style-barbershop@1775034749861] Kategori       : Tempat Cukur Rambut
+[01-04-2026 16.12.29.871] [INFO ] [king-style-barbershop@1775034749861] Rating         : 4.8 (218 ulasan)
+[01-04-2026 16.12.29.873] [INFO ] [king-style-barbershop@1775034749861] Provider dipilih: google/gemini-2.5-flash
+[01-04-2026 16.12.29.875] [INFO ] [king-style-barbershop@1775034749861] Gemini key     : ✓ Ada
+[01-04-2026 16.12.29.877] [INFO ] [king-style-barbershop@1775034749861] OpenRouter key : ✓ Ada
+[01-04-2026 16.12.29.879] [INFO ] [king-style-barbershop@1775034749861] Mengambil kandidat gambar dari Unsplash API...
+[01-04-2026 16.12.31.310] [OK   ] [king-style-barbershop@1775034749861] Unsplash: 24 gambar kandidat siap
+[01-04-2026 16.12.31.312] [INFO ] [king-style-barbershop@1775034749861] Prompt dibangun: 26258 chars / 25.6 KB
+[01-04-2026 16.12.31.313] [INFO ] [king-style-barbershop@1775034749861] Mode: Direct OpenRouter → google/gemini-2.5-flash
+[01-04-2026 16.12.31.314] [INFO ] [king-style-barbershop@1775034749861] Mengirim request ke OpenRouter (attempt 1/3)...
+[01-04-2026 16.12.31.315] [INFO ] [king-style-barbershop@1775034749861] URL: https://openrouter.ai/api/v1/chat/completions
+[01-04-2026 16.12.31.315] [INFO ] [king-style-barbershop@1775034749861] Model: google/gemini-2.5-flash  |  max_tokens: 65536  |  temperature: 0.7
+[01-04-2026 16.12.32.475] [INFO ] [king-style-barbershop@1775034749861] Response HTTP 200 diterima dalam 1.2s
+[01-04-2026 16.13.21.675] [INFO ] [king-style-barbershop@1775034749861] Token usage — prompt: 11413 | completion: 12834 | total: 24247
+[01-04-2026 16.13.21.676] [INFO ] [king-style-barbershop@1775034749861] Raw response: 31179 chars / 30.4 KB
+[01-04-2026 16.13.21.678] [OK   ] [king-style-barbershop@1775034749861] HTML diekstrak (dengan DOCTYPE): 31179 chars / 30.4 KB
+[01-04-2026 16.13.21.679] [OK   ] [king-style-barbershop@1775034749861] Final HTML siap: 37753 chars / 36.9 KB
+[01-04-2026 16.13.21.681] [DONE ] [king-style-barbershop@1775034749861] Generate selesai! Total waktu: 50.4s | HTML: 36.9 KB
+[01-04-2026 16.54.05.792] [START] [king-style-barbershop@1775037245791] ════════════════════════════════════════════════════════════
+[01-04-2026 16.54.05.793] [START] [king-style-barbershop@1775037245791] Sesi baru dimulai — bisnis: king-style-barbershop
+[01-04-2026 16.54.05.794] [START] [king-style-barbershop@1775037245791] Session ID: king-style-barbershop@1775037245791
+[01-04-2026 16.54.05.795] [INFO ] [king-style-barbershop@1775037245791] Bisnis         : KING STYLE BARBERSHOP
+[01-04-2026 16.54.05.796] [INFO ] [king-style-barbershop@1775037245791] Kategori       : Tempat Cukur Rambut
+[01-04-2026 16.54.05.797] [INFO ] [king-style-barbershop@1775037245791] Rating         : 4.8 (218 ulasan)
+[01-04-2026 16.54.05.798] [INFO ] [king-style-barbershop@1775037245791] Provider dipilih: google/gemini-2.5-flash
+[01-04-2026 16.54.05.799] [INFO ] [king-style-barbershop@1775037245791] Gemini key     : ✓ Ada
+[01-04-2026 16.54.05.799] [INFO ] [king-style-barbershop@1775037245791] OpenRouter key : ✓ Ada
+[01-04-2026 16.54.05.800] [INFO ] [king-style-barbershop@1775037245791] Mengambil kandidat gambar dari Unsplash API...
+[01-04-2026 16.54.05.805] [OK   ] [king-style-barbershop@1775037245791] Unsplash: 24 gambar kandidat siap
+[01-04-2026 16.54.05.807] [INFO ] [king-style-barbershop@1775037245791] Prompt dibangun: 13393 chars / 13.1 KB
+[01-04-2026 16.54.05.808] [INFO ] [king-style-barbershop@1775037245791] Mode: Direct OpenRouter → google/gemini-2.5-flash
+[01-04-2026 16.54.05.809] [INFO ] [king-style-barbershop@1775037245791] Mengirim request ke OpenRouter (attempt 1/3)...
+[01-04-2026 16.54.05.810] [INFO ] [king-style-barbershop@1775037245791] URL: https://openrouter.ai/api/v1/chat/completions
+[01-04-2026 16.54.05.811] [INFO ] [king-style-barbershop@1775037245791] Model: google/gemini-2.5-flash  |  max_tokens: 65536  |  temperature: 0.7
+[01-04-2026 16.54.07.626] [INFO ] [king-style-barbershop@1775037245791] Response HTTP 200 diterima dalam 1.8s
+[01-04-2026 16.54.54.529] [INFO ] [king-style-barbershop@1775037245791] Token usage — prompt: 6180 | completion: 11046 | total: 17226
+[01-04-2026 16.54.54.531] [INFO ] [king-style-barbershop@1775037245791] Raw response: 27251 chars / 26.6 KB
+[01-04-2026 16.54.54.532] [OK   ] [king-style-barbershop@1775037245791] HTML diekstrak (dengan DOCTYPE): 27251 chars / 26.6 KB
+[01-04-2026 16.54.54.534] [OK   ] [king-style-barbershop@1775037245791] Final HTML siap: 33825 chars / 33.0 KB
+[01-04-2026 16.54.54.535] [DONE ] [king-style-barbershop@1775037245791] Generate selesai! Total waktu: 48.7s | HTML: 33.0 KB
+[01-04-2026 16.58.03.032] [START] [king-style-barbershop@1775037483032] ════════════════════════════════════════════════════════════
+[01-04-2026 16.58.03.033] [START] [king-style-barbershop@1775037483032] Sesi baru dimulai — bisnis: king-style-barbershop
+[01-04-2026 16.58.03.034] [START] [king-style-barbershop@1775037483032] Session ID: king-style-barbershop@1775037483032
+[01-04-2026 16.58.03.035] [INFO ] [king-style-barbershop@1775037483032] Bisnis         : KING STYLE BARBERSHOP
+[01-04-2026 16.58.03.036] [INFO ] [king-style-barbershop@1775037483032] Kategori       : Tempat Cukur Rambut
+[01-04-2026 16.58.03.037] [INFO ] [king-style-barbershop@1775037483032] Rating         : 4.8 (218 ulasan)
+[01-04-2026 16.58.03.038] [INFO ] [king-style-barbershop@1775037483032] Provider dipilih: google/gemini-2.5-flash
+[01-04-2026 16.58.03.038] [INFO ] [king-style-barbershop@1775037483032] Gemini key     : ✓ Ada
+[01-04-2026 16.58.03.039] [INFO ] [king-style-barbershop@1775037483032] OpenRouter key : ✓ Ada
+[01-04-2026 16.58.03.040] [INFO ] [king-style-barbershop@1775037483032] Mengambil kandidat gambar dari Unsplash API...
+[01-04-2026 16.58.03.043] [OK   ] [king-style-barbershop@1775037483032] Unsplash: 24 gambar kandidat siap
+[01-04-2026 16.58.03.045] [INFO ] [king-style-barbershop@1775037483032] Prompt dibangun: 14097 chars / 13.8 KB
+[01-04-2026 16.58.03.046] [INFO ] [king-style-barbershop@1775037483032] Mode: Direct OpenRouter → google/gemini-2.5-flash
+[01-04-2026 16.58.03.047] [INFO ] [king-style-barbershop@1775037483032] Mengirim request ke OpenRouter (attempt 1/3)...
+[01-04-2026 16.58.03.047] [INFO ] [king-style-barbershop@1775037483032] URL: https://openrouter.ai/api/v1/chat/completions
+[01-04-2026 16.58.03.048] [INFO ] [king-style-barbershop@1775037483032] Model: google/gemini-2.5-flash  |  max_tokens: 65536  |  temperature: 0.7
+[01-04-2026 16.58.04.910] [INFO ] [king-style-barbershop@1775037483032] Response HTTP 200 diterima dalam 1.9s
+[01-04-2026 16.59.09.773] [INFO ] [king-style-barbershop@1775037483032] Token usage — prompt: 6360 | completion: 13800 | total: 20160
+[01-04-2026 16.59.09.774] [INFO ] [king-style-barbershop@1775037483032] Raw response: 34172 chars / 33.4 KB
+[01-04-2026 16.59.09.776] [OK   ] [king-style-barbershop@1775037483032] HTML diekstrak (dengan DOCTYPE): 34172 chars / 33.4 KB
+[01-04-2026 16.59.09.777] [OK   ] [king-style-barbershop@1775037483032] Final HTML siap: 40746 chars / 39.8 KB
+[01-04-2026 16.59.09.778] [DONE ] [king-style-barbershop@1775037483032] Generate selesai! Total waktu: 66.7s | HTML: 39.8 KB
+[01-04-2026 22.35.52.984] [START] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] ════════════════════════════════════════════════════════════
+[01-04-2026 22.35.52.987] [START] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] Sesi baru dimulai — bisnis: brooklyn-barbershop-tempat-cukur-rambut-147
+[01-04-2026 22.35.52.988] [START] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] Session ID: brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982
+[01-04-2026 22.35.52.990] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] Bisnis         : Brooklyn Barbershop
+[01-04-2026 22.35.52.991] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] Kategori       : Tempat Cukur Rambut
+[01-04-2026 22.35.52.992] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] Rating         : 4.6 (500 ulasan)
+[01-04-2026 22.35.52.994] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] Provider dipilih: anthropic/claude-sonnet-4.6
+[01-04-2026 22.35.52.996] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] Gemini key     : ✓ Ada
+[01-04-2026 22.35.52.998] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] OpenRouter key : ✓ Ada
+[01-04-2026 22.35.53.000] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] Mengambil kandidat gambar dari Unsplash API...
+[01-04-2026 22.35.53.021] [OK   ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] Unsplash: 24 gambar kandidat siap
+[01-04-2026 22.35.53.023] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] Prompt dibangun: 14095 chars / 13.8 KB
+[01-04-2026 22.35.53.025] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] Mode: Direct OpenRouter → anthropic/claude-sonnet-4.6
+[01-04-2026 22.35.53.026] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] Mengirim request ke OpenRouter (attempt 1/3)...
+[01-04-2026 22.35.53.027] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] URL: https://openrouter.ai/api/v1/chat/completions
+[01-04-2026 22.35.53.029] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] Model: anthropic/claude-sonnet-4.6  |  max_tokens: 65536  |  temperature: 0.7
+[01-04-2026 22.35.59.042] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775057752982] Response HTTP 200 diterima dalam 6.0s
+[01-04-2026 22.40.38.829] [START] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] ════════════════════════════════════════════════════════════
+[01-04-2026 22.40.38.831] [START] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Sesi baru dimulai — bisnis: brooklyn-barbershop-tempat-cukur-rambut-147
+[01-04-2026 22.40.38.834] [START] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Session ID: brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828
+[01-04-2026 22.40.38.835] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Bisnis         : Brooklyn Barbershop
+[01-04-2026 22.40.38.837] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Kategori       : Tempat Cukur Rambut
+[01-04-2026 22.40.38.838] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Rating         : 4.6 (500 ulasan)
+[01-04-2026 22.40.38.839] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Provider dipilih: google/gemini-2.5-flash
+[01-04-2026 22.40.38.841] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Gemini key     : ✓ Ada
+[01-04-2026 22.40.38.842] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] OpenRouter key : ✓ Ada
+[01-04-2026 22.40.38.843] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Mengambil kandidat gambar dari Unsplash API...
+[01-04-2026 22.40.38.850] [OK   ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Unsplash: 24 gambar kandidat siap
+[01-04-2026 22.40.38.852] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Prompt dibangun: 14095 chars / 13.8 KB
+[01-04-2026 22.40.38.854] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Mode: Direct OpenRouter → google/gemini-2.5-flash
+[01-04-2026 22.40.38.856] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Mengirim request ke OpenRouter (attempt 1/3)...
+[01-04-2026 22.40.38.857] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] URL: https://openrouter.ai/api/v1/chat/completions
+[01-04-2026 22.40.38.859] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Model: google/gemini-2.5-flash  |  max_tokens: 65536  |  temperature: 0.7
+[01-04-2026 22.40.40.159] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Response HTTP 200 diterima dalam 1.3s
+[01-04-2026 22.41.06.035] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Token usage — prompt: 7034 | completion: 28215 | total: 35249
+[01-04-2026 22.41.06.038] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Raw response: 68271 chars / 66.7 KB
+[01-04-2026 22.41.06.040] [OK   ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] HTML diekstrak (dengan DOCTYPE): 68271 chars / 66.7 KB
+[01-04-2026 22.41.06.045] [OK   ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Final HTML siap: 74845 chars / 73.1 KB
+[01-04-2026 22.41.06.048] [DONE ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Generate selesai! Total waktu: 313.0s | HTML: 73.1 KB
+[01-04-2026 22.44.03.979] [ERROR] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Attempt 1 exception: terminated
+[01-04-2026 22.44.03.987] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] (google/gemini-2.5-flash) Retry 2/3 — tunggu 10s...
+[01-04-2026 22.44.13.999] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Mengirim request ke OpenRouter (attempt 2/3)...
+[01-04-2026 22.44.14.002] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] URL: https://openrouter.ai/api/v1/chat/completions
+[01-04-2026 22.44.14.004] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Model: google/gemini-2.5-flash  |  max_tokens: 65536  |  temperature: 0.7
+[01-04-2026 22.44.15.755] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Response HTTP 200 diterima dalam 1.8s
+[01-04-2026 22.45.10.035] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Token usage — prompt: 6343 | completion: 13361 | total: 19704
+[01-04-2026 22.45.10.036] [INFO ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Raw response: 33312 chars / 32.5 KB
+[01-04-2026 22.45.10.040] [OK   ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] HTML diekstrak (dengan DOCTYPE): 33312 chars / 32.5 KB
+[01-04-2026 22.45.10.043] [OK   ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Final HTML siap: 39886 chars / 39.0 KB
+[01-04-2026 22.45.10.045] [DONE ] [brooklyn-barbershop-tempat-cukur-rambut-147@1775058038828] Generate selesai! Total waktu: 271.2s | HTML: 39.0 KB
+[01-04-2026 23.02.35.830] [START] [kallia@1775059355830] ════════════════════════════════════════════════════════════
+[01-04-2026 23.02.35.832] [START] [kallia@1775059355830] Sesi baru dimulai — bisnis: kallia
+[01-04-2026 23.02.35.833] [START] [kallia@1775059355830] Session ID: kallia@1775059355830
+[01-04-2026 23.02.35.834] [INFO ] [kallia@1775059355830] Bisnis         : KALLIA
+[01-04-2026 23.02.35.836] [INFO ] [kallia@1775059355830] Kategori       : Kedai Kopi
+[01-04-2026 23.02.35.837] [INFO ] [kallia@1775059355830] Rating         : 4.5 (818 ulasan)
+[01-04-2026 23.02.35.838] [INFO ] [kallia@1775059355830] Provider dipilih: gemini
+[01-04-2026 23.02.35.839] [INFO ] [kallia@1775059355830] Gemini key     : ✓ Ada
+[01-04-2026 23.02.35.840] [INFO ] [kallia@1775059355830] OpenRouter key : ✓ Ada
+[01-04-2026 23.02.35.841] [INFO ] [kallia@1775059355830] Mengambil kandidat gambar dari Unsplash API...
+[01-04-2026 23.02.38.253] [OK   ] [kallia@1775059355830] Unsplash: 24 gambar kandidat siap
+[01-04-2026 23.02.38.256] [INFO ] [kallia@1775059355830] Prompt dibangun: 14268 chars / 13.9 KB
+[01-04-2026 23.02.38.257] [INFO ] [kallia@1775059355830] Mode: Gemini Auto (dengan fallback OpenRouter)
+[01-04-2026 23.02.38.258] [INFO ] [kallia@1775059355830] Gemini model list: gemini-2.5-flash → gemini-2.0-flash → gemini-2.0-flash-lite
+[01-04-2026 23.02.38.260] [INFO ] [kallia@1775059355830] ─── Mencoba Gemini: gemini-2.5-flash ───
+[01-04-2026 23.02.38.261] [INFO ] [kallia@1775059355830] Mengirim ke Gemini (attempt 1/3)...
+[01-04-2026 23.04.52.726] [INFO ] [kallia@1775059355830] Gemini response diterima dalam 134.5s — 35991 chars / 35.1 KB
+[01-04-2026 23.04.52.731] [OK   ] [kallia@1775059355830] HTML diekstrak (dengan DOCTYPE): 35991 chars / 35.1 KB
+[01-04-2026 23.04.52.734] [OK   ] [kallia@1775059355830] Final HTML siap: 42895 chars / 41.9 KB
+[01-04-2026 23.04.52.736] [DONE ] [kallia@1775059355830] Generate Gemini selesai! Total waktu: 134.5s | HTML: 41.9 KB
+[02-04-2026 10.38.12.019] [START] [mula@1775101092018] ════════════════════════════════════════════════════════════
+[02-04-2026 10.38.12.021] [START] [mula@1775101092018] Sesi baru dimulai — bisnis: mula
+[02-04-2026 10.38.12.022] [START] [mula@1775101092018] Session ID: mula@1775101092018
+[02-04-2026 10.38.12.023] [INFO ] [mula@1775101092018] Bisnis         : Mula
+[02-04-2026 10.38.12.025] [INFO ] [mula@1775101092018] Kategori       : Kafe
+[02-04-2026 10.38.12.026] [INFO ] [mula@1775101092018] Rating         : 4.9 (1394 ulasan)
+[02-04-2026 10.38.12.027] [INFO ] [mula@1775101092018] Provider dipilih: gemini
+[02-04-2026 10.38.12.028] [INFO ] [mula@1775101092018] Gemini key     : ✓ Ada
+[02-04-2026 10.38.12.029] [INFO ] [mula@1775101092018] OpenRouter key : ✓ Ada
+[02-04-2026 10.38.12.030] [INFO ] [mula@1775101092018] Mengambil kandidat gambar dari Unsplash API...
+[02-04-2026 10.38.13.627] [OK   ] [mula@1775101092018] Unsplash: 24 gambar kandidat siap
+[02-04-2026 10.38.13.629] [INFO ] [mula@1775101092018] Prompt dibangun: 14142 chars / 13.8 KB
+[02-04-2026 10.38.13.630] [INFO ] [mula@1775101092018] Mode: Gemini Auto (dengan fallback OpenRouter)
+[02-04-2026 10.38.13.631] [INFO ] [mula@1775101092018] Gemini model list: gemini-2.5-flash → gemini-2.0-flash → gemini-2.0-flash-lite
+[02-04-2026 10.38.13.631] [INFO ] [mula@1775101092018] ─── Mencoba Gemini: gemini-2.5-flash ───
+[02-04-2026 10.38.13.632] [INFO ] [mula@1775101092018] Mengirim ke Gemini (attempt 1/3)...
+[02-04-2026 10.40.24.690] [INFO ] [mula@1775101092018] Gemini response diterima dalam 131.1s — 38046 chars / 37.2 KB
+[02-04-2026 10.40.24.693] [OK   ] [mula@1775101092018] HTML diekstrak (dengan DOCTYPE): 38046 chars / 37.2 KB
+[02-04-2026 10.40.24.694] [OK   ] [mula@1775101092018] Final HTML siap: 44665 chars / 43.6 KB
+[02-04-2026 10.40.24.696] [DONE ] [mula@1775101092018] Generate Gemini selesai! Total waktu: 131.1s | HTML: 43.6 KB
+[02-04-2026 10.41.07.514] [START] [roemah-bata-cafe-end-resto@1775101267514] ════════════════════════════════════════════════════════════
+[02-04-2026 10.41.07.515] [START] [roemah-bata-cafe-end-resto@1775101267514] Sesi baru dimulai — bisnis: roemah-bata-cafe-end-resto
+[02-04-2026 10.41.07.515] [START] [roemah-bata-cafe-end-resto@1775101267514] Session ID: roemah-bata-cafe-end-resto@1775101267514
+[02-04-2026 10.41.07.516] [INFO ] [roemah-bata-cafe-end-resto@1775101267514] Bisnis         : Roemah Bata, Cafe End Resto
+[02-04-2026 10.41.07.517] [INFO ] [roemah-bata-cafe-end-resto@1775101267514] Kategori       : Kafe
+[02-04-2026 10.41.07.518] [INFO ] [roemah-bata-cafe-end-resto@1775101267514] Rating         : 4.5 (753 ulasan)
+[02-04-2026 10.41.07.518] [INFO ] [roemah-bata-cafe-end-resto@1775101267514] Provider dipilih: gemini
+[02-04-2026 10.41.07.519] [INFO ] [roemah-bata-cafe-end-resto@1775101267514] Gemini key     : ✓ Ada
+[02-04-2026 10.41.07.519] [INFO ] [roemah-bata-cafe-end-resto@1775101267514] OpenRouter key : ✓ Ada
+[02-04-2026 10.41.07.520] [INFO ] [roemah-bata-cafe-end-resto@1775101267514] Mengambil kandidat gambar dari Unsplash API...
+[02-04-2026 10.41.07.524] [OK   ] [roemah-bata-cafe-end-resto@1775101267514] Unsplash: 24 gambar kandidat siap
+[02-04-2026 10.41.07.525] [INFO ] [roemah-bata-cafe-end-resto@1775101267514] Prompt dibangun: 14287 chars / 14.0 KB
+[02-04-2026 10.41.07.526] [INFO ] [roemah-bata-cafe-end-resto@1775101267514] Mode: Gemini Auto (dengan fallback OpenRouter)
+[02-04-2026 10.41.07.529] [INFO ] [roemah-bata-cafe-end-resto@1775101267514] Gemini model list: gemini-2.5-flash → gemini-2.0-flash → gemini-2.0-flash-lite
+[02-04-2026 10.41.07.529] [INFO ] [roemah-bata-cafe-end-resto@1775101267514] ─── Mencoba Gemini: gemini-2.5-flash ───
+[02-04-2026 10.41.07.530] [INFO ] [roemah-bata-cafe-end-resto@1775101267514] Mengirim ke Gemini (attempt 1/3)...
+[02-04-2026 10.42.30.447] [INFO ] [roemah-bata-cafe-end-resto@1775101267514] Gemini response diterima dalam 82.9s — 42639 chars / 41.6 KB
+[02-04-2026 10.42.30.451] [OK   ] [roemah-bata-cafe-end-resto@1775101267514] HTML diekstrak (dengan DOCTYPE): 42639 chars / 41.6 KB
+[02-04-2026 10.42.30.454] [OK   ] [roemah-bata-cafe-end-resto@1775101267514] Final HTML siap: 49258 chars / 48.1 KB
+[02-04-2026 10.42.30.454] [DONE ] [roemah-bata-cafe-end-resto@1775101267514] Generate Gemini selesai! Total waktu: 82.9s | HTML: 48.1 KB
+[02-04-2026 10.50.33.599] [START] [grama-sphere-coffee@1775101833599] ════════════════════════════════════════════════════════════
+[02-04-2026 10.50.33.601] [START] [grama-sphere-coffee@1775101833599] Sesi baru dimulai — bisnis: grama-sphere-coffee
+[02-04-2026 10.50.33.601] [START] [grama-sphere-coffee@1775101833599] Session ID: grama-sphere-coffee@1775101833599
+[02-04-2026 10.50.33.602] [INFO ] [grama-sphere-coffee@1775101833599] Bisnis         : GRAMA SPHERE COFFEE
+[02-04-2026 10.50.33.603] [INFO ] [grama-sphere-coffee@1775101833599] Kategori       : Kedai Kopi
+[02-04-2026 10.50.33.603] [INFO ] [grama-sphere-coffee@1775101833599] Rating         : 4.6 (917 ulasan)
+[02-04-2026 10.50.33.604] [INFO ] [grama-sphere-coffee@1775101833599] Provider dipilih: gemini
+[02-04-2026 10.50.33.605] [INFO ] [grama-sphere-coffee@1775101833599] Gemini key     : ✓ Ada
+[02-04-2026 10.50.33.605] [INFO ] [grama-sphere-coffee@1775101833599] OpenRouter key : ✓ Ada
+[02-04-2026 10.50.33.606] [INFO ] [grama-sphere-coffee@1775101833599] Mengambil kandidat gambar dari Unsplash API...
+[02-04-2026 10.50.33.617] [OK   ] [grama-sphere-coffee@1775101833599] Unsplash: 24 gambar kandidat siap
+[02-04-2026 10.50.33.618] [INFO ] [grama-sphere-coffee@1775101833599] Prompt dibangun: 14341 chars / 14.0 KB
+[02-04-2026 10.50.33.618] [INFO ] [grama-sphere-coffee@1775101833599] Mode: Gemini Auto (dengan fallback OpenRouter)
+[02-04-2026 10.50.33.619] [INFO ] [grama-sphere-coffee@1775101833599] Gemini model list: gemini-2.5-flash → gemini-2.0-flash → gemini-2.0-flash-lite
+[02-04-2026 10.50.33.620] [INFO ] [grama-sphere-coffee@1775101833599] ─── Mencoba Gemini: gemini-2.5-flash ───
+[02-04-2026 10.50.33.620] [INFO ] [grama-sphere-coffee@1775101833599] Mengirim ke Gemini (attempt 1/3)...
+[02-04-2026 10.54.29.188] [INFO ] [grama-sphere-coffee@1775101833599] Gemini response diterima dalam 235.6s — 8277 chars / 8.1 KB
+[02-04-2026 10.54.29.190] [WARN ] [grama-sphere-coffee@1775101833599] HTML tags tidak ditemukan! Returning raw text (8277 chars)
+[02-04-2026 10.54.29.192] [DONE ] [grama-sphere-coffee@1775101833599] Generate Gemini selesai! Total waktu: 235.6s | HTML: 8.1 KB
+[02-04-2026 10.56.32.920] [START] [grama-sphere-coffee@1775102192920] ════════════════════════════════════════════════════════════
+[02-04-2026 10.56.32.922] [START] [grama-sphere-coffee@1775102192920] Sesi baru dimulai — bisnis: grama-sphere-coffee
+[02-04-2026 10.56.32.923] [START] [grama-sphere-coffee@1775102192920] Session ID: grama-sphere-coffee@1775102192920
+[02-04-2026 10.56.32.925] [INFO ] [grama-sphere-coffee@1775102192920] Bisnis         : GRAMA SPHERE COFFEE
+[02-04-2026 10.56.32.926] [INFO ] [grama-sphere-coffee@1775102192920] Kategori       : Kedai Kopi
+[02-04-2026 10.56.32.927] [INFO ] [grama-sphere-coffee@1775102192920] Rating         : 4.6 (917 ulasan)
+[02-04-2026 10.56.32.928] [INFO ] [grama-sphere-coffee@1775102192920] Provider dipilih: gemini
+[02-04-2026 10.56.32.930] [INFO ] [grama-sphere-coffee@1775102192920] Gemini key     : ✓ Ada
+[02-04-2026 10.56.32.931] [INFO ] [grama-sphere-coffee@1775102192920] OpenRouter key : ✓ Ada
+[02-04-2026 10.56.32.932] [INFO ] [grama-sphere-coffee@1775102192920] Mengambil kandidat gambar dari Unsplash API...
+[02-04-2026 10.56.32.938] [OK   ] [grama-sphere-coffee@1775102192920] Unsplash: 24 gambar kandidat siap
+[02-04-2026 10.56.32.940] [INFO ] [grama-sphere-coffee@1775102192920] Prompt dibangun: 14341 chars / 14.0 KB
+[02-04-2026 10.56.32.941] [INFO ] [grama-sphere-coffee@1775102192920] Mode: Gemini Auto (dengan fallback OpenRouter)
+[02-04-2026 10.56.32.943] [INFO ] [grama-sphere-coffee@1775102192920] Gemini model list: gemini-2.5-flash → gemini-2.0-flash → gemini-2.0-flash-lite
+[02-04-2026 10.56.32.944] [INFO ] [grama-sphere-coffee@1775102192920] ─── Mencoba Gemini: gemini-2.5-flash ───
+[02-04-2026 10.56.32.945] [INFO ] [grama-sphere-coffee@1775102192920] Mengirim ke Gemini (attempt 1/3)...
+[02-04-2026 10.58.21.856] [INFO ] [grama-sphere-coffee@1775102192920] Gemini response diterima dalam 108.9s — 34173 chars / 33.4 KB
+[02-04-2026 10.58.21.858] [INFO ] [grama-sphere-coffee@1775102192920] Stripped markdown code fence dari response
+[02-04-2026 10.58.21.859] [OK   ] [grama-sphere-coffee@1775102192920] HTML diekstrak (dengan DOCTYPE): 34161 chars / 33.4 KB
+[02-04-2026 10.58.21.861] [OK   ] [grama-sphere-coffee@1775102192920] Final HTML siap: 41065 chars / 40.1 KB
+[02-04-2026 10.58.21.862] [DONE ] [grama-sphere-coffee@1775102192920] Generate Gemini selesai! Total waktu: 108.9s | HTML: 40.1 KB
