@@ -40,5 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# AI generate logs (local only)
-/logs/
+# AI generate logs (keep folder, ignore log contents)
+/logs/*.log
+!/logs/.gitkeep
