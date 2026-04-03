@@ -132,3 +132,54 @@ body {
 .delay-300 { animation-delay: 0.3s; }
 .delay-400 { animation-delay: 0.4s; }
 .delay-500 { animation-delay: 0.5s; }
+
+@keyframes floatSlow {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(-12px) translateX(8px);
+  }
+}
+
+@keyframes floatSlower {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(10px) translateX(-10px);
+  }
+}
+
+@keyframes softPulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.15);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 9s ease-in-out infinite;
+}
+
+.animate-float-slower {
+  animation: floatSlower 12s ease-in-out infinite;
+}
+
+.animate-soft-pulse {
+  animation: softPulse 4s ease-in-out infinite;
+}
+
+.bg-grid-soft {
+  background-image:
+    linear-gradient(to right, rgba(30, 58, 74, 0.28) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30, 58, 74, 0.28) 1px, transparent 1px);
+  background-size: 36px 36px;
+}

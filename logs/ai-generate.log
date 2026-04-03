@@ -288,3 +288,167 @@
 [02-04-2026 10.58.21.859] [OK   ] [grama-sphere-coffee@1775102192920] HTML diekstrak (dengan DOCTYPE): 34161 chars / 33.4 KB
 [02-04-2026 10.58.21.861] [OK   ] [grama-sphere-coffee@1775102192920] Final HTML siap: 41065 chars / 40.1 KB
 [02-04-2026 10.58.21.862] [DONE ] [grama-sphere-coffee@1775102192920] Generate Gemini selesai! Total waktu: 108.9s | HTML: 40.1 KB
+[02-04-2026 21.35.37.583] [START] [aiho-hotel-medan@1775140537580] ════════════════════════════════════════════════════════════
+[02-04-2026 21.35.37.588] [START] [aiho-hotel-medan@1775140537580] Sesi baru dimulai — bisnis: aiho-hotel-medan
+[02-04-2026 21.35.37.590] [START] [aiho-hotel-medan@1775140537580] Session ID: aiho-hotel-medan@1775140537580
+[02-04-2026 21.35.37.592] [INFO ] [aiho-hotel-medan@1775140537580] Bisnis         : AIHO Hotel Medan
+[02-04-2026 21.35.37.593] [INFO ] [aiho-hotel-medan@1775140537580] Kategori       : Lainnya
+[02-04-2026 21.35.37.594] [INFO ] [aiho-hotel-medan@1775140537580] Rating         : 4.7 (7415 ulasan)
+[02-04-2026 21.35.37.595] [INFO ] [aiho-hotel-medan@1775140537580] Provider dipilih: gemini
+[02-04-2026 21.35.37.596] [INFO ] [aiho-hotel-medan@1775140537580] Gemini key     : ✓ Ada
+[02-04-2026 21.35.37.597] [INFO ] [aiho-hotel-medan@1775140537580] OpenRouter key : ✓ Ada
+[02-04-2026 21.35.37.598] [INFO ] [aiho-hotel-medan@1775140537580] Mengambil kandidat gambar dari Unsplash API...
+[02-04-2026 21.35.38.744] [OK   ] [aiho-hotel-medan@1775140537580] Unsplash: 24 gambar kandidat siap
+[02-04-2026 21.35.38.772] [INFO ] [aiho-hotel-medan@1775140537580] Prompt dibangun: 14261 chars / 13.9 KB
+[02-04-2026 21.35.38.774] [INFO ] [aiho-hotel-medan@1775140537580] Mode: Gemini Auto (dengan fallback OpenRouter)
+[02-04-2026 21.35.38.777] [INFO ] [aiho-hotel-medan@1775140537580] Gemini model list: gemini-2.5-flash → gemini-2.0-flash → gemini-2.0-flash-lite
+[02-04-2026 21.35.38.778] [INFO ] [aiho-hotel-medan@1775140537580] ─── Mencoba Gemini: gemini-2.5-flash ───
+[02-04-2026 21.35.38.780] [INFO ] [aiho-hotel-medan@1775140537580] Mengirim ke Gemini (attempt 1/3)...
+[02-04-2026 21.39.41.899] [INFO ] [aiho-hotel-medan@1775140537580] Gemini response diterima dalam 243.1s — 70033 chars / 68.4 KB
+[02-04-2026 21.39.41.902] [WARN ] [aiho-hotel-medan@1775140537580] HTML tags tidak ditemukan! Returning raw text (70033 chars)
+[02-04-2026 21.39.41.906] [DONE ] [aiho-hotel-medan@1775140537580] Generate Gemini selesai! Total waktu: 243.1s | HTML: 68.4 KB
+[02-04-2026 21.41.00.145] [START] [alpha-inn-hotel-medan@1775140860144] ════════════════════════════════════════════════════════════
+[02-04-2026 21.41.00.148] [START] [alpha-inn-hotel-medan@1775140860144] Sesi baru dimulai — bisnis: alpha-inn-hotel-medan
+[02-04-2026 21.41.00.149] [START] [alpha-inn-hotel-medan@1775140860144] Session ID: alpha-inn-hotel-medan@1775140860144
+[02-04-2026 21.41.00.150] [INFO ] [alpha-inn-hotel-medan@1775140860144] Bisnis         : Alpha Inn Hotel Medan
+[02-04-2026 21.41.00.150] [INFO ] [alpha-inn-hotel-medan@1775140860144] Kategori       : Lainnya
+[02-04-2026 21.41.00.154] [INFO ] [alpha-inn-hotel-medan@1775140860144] Rating         : 3.8 (1135 ulasan)
+[02-04-2026 21.41.00.155] [INFO ] [alpha-inn-hotel-medan@1775140860144] Provider dipilih: gemini
+[02-04-2026 21.41.00.156] [INFO ] [alpha-inn-hotel-medan@1775140860144] Gemini key     : ✓ Ada
+[02-04-2026 21.41.00.157] [INFO ] [alpha-inn-hotel-medan@1775140860144] OpenRouter key : ✓ Ada
+[02-04-2026 21.41.00.158] [INFO ] [alpha-inn-hotel-medan@1775140860144] Mengambil kandidat gambar dari Unsplash API...
+[02-04-2026 21.41.00.164] [OK   ] [alpha-inn-hotel-medan@1775140860144] Unsplash: 24 gambar kandidat siap
+[02-04-2026 21.41.00.166] [INFO ] [alpha-inn-hotel-medan@1775140860144] Prompt dibangun: 14275 chars / 13.9 KB
+[02-04-2026 21.41.00.166] [INFO ] [alpha-inn-hotel-medan@1775140860144] Mode: Gemini Auto (dengan fallback OpenRouter)
+[02-04-2026 21.41.00.167] [INFO ] [alpha-inn-hotel-medan@1775140860144] Gemini model list: gemini-2.5-flash → gemini-2.0-flash → gemini-2.0-flash-lite
+[02-04-2026 21.41.00.168] [INFO ] [alpha-inn-hotel-medan@1775140860144] ─── Mencoba Gemini: gemini-2.5-flash ───
+[02-04-2026 21.41.00.172] [INFO ] [alpha-inn-hotel-medan@1775140860144] Mengirim ke Gemini (attempt 1/3)...
+[02-04-2026 21.42.27.785] [INFO ] [alpha-inn-hotel-medan@1775140860144] Gemini response diterima dalam 87.6s — 40144 chars / 39.2 KB
+[02-04-2026 21.42.27.791] [INFO ] [alpha-inn-hotel-medan@1775140860144] Stripped markdown code fence dari response
+[02-04-2026 21.42.27.793] [OK   ] [alpha-inn-hotel-medan@1775140860144] HTML diekstrak (dengan DOCTYPE): 40132 chars / 39.2 KB
+[02-04-2026 21.42.27.795] [OK   ] [alpha-inn-hotel-medan@1775140860144] Final HTML siap: 46846 chars / 45.7 KB
+[02-04-2026 21.42.27.796] [DONE ] [alpha-inn-hotel-medan@1775140860144] Generate Gemini selesai! Total waktu: 87.6s | HTML: 45.7 KB
+[02-04-2026 21.43.13.362] [START] [desadesa-resto@1775140993362] ════════════════════════════════════════════════════════════
+[02-04-2026 21.43.13.364] [START] [desadesa-resto@1775140993362] Sesi baru dimulai — bisnis: desadesa-resto
+[02-04-2026 21.43.13.365] [START] [desadesa-resto@1775140993362] Session ID: desadesa-resto@1775140993362
+[02-04-2026 21.43.13.366] [INFO ] [desadesa-resto@1775140993362] Bisnis         : Desadesa Resto
+[02-04-2026 21.43.13.367] [INFO ] [desadesa-resto@1775140993362] Kategori       : Restoran
+[02-04-2026 21.43.13.367] [INFO ] [desadesa-resto@1775140993362] Rating         : 4.3 (2450 ulasan)
+[02-04-2026 21.43.13.369] [INFO ] [desadesa-resto@1775140993362] Provider dipilih: gemini
+[02-04-2026 21.43.13.371] [INFO ] [desadesa-resto@1775140993362] Gemini key     : ✓ Ada
+[02-04-2026 21.43.13.372] [INFO ] [desadesa-resto@1775140993362] OpenRouter key : ✓ Ada
+[02-04-2026 21.43.13.373] [INFO ] [desadesa-resto@1775140993362] Mengambil kandidat gambar dari Unsplash API...
+[02-04-2026 21.43.15.308] [OK   ] [desadesa-resto@1775140993362] Unsplash: 24 gambar kandidat siap
+[02-04-2026 21.43.15.309] [INFO ] [desadesa-resto@1775140993362] Prompt dibangun: 13931 chars / 13.6 KB
+[02-04-2026 21.43.15.310] [INFO ] [desadesa-resto@1775140993362] Mode: Gemini Auto (dengan fallback OpenRouter)
+[02-04-2026 21.43.15.312] [INFO ] [desadesa-resto@1775140993362] Gemini model list: gemini-2.5-flash → gemini-2.0-flash → gemini-2.0-flash-lite
+[02-04-2026 21.43.15.313] [INFO ] [desadesa-resto@1775140993362] ─── Mencoba Gemini: gemini-2.5-flash ───
+[02-04-2026 21.43.15.314] [INFO ] [desadesa-resto@1775140993362] Mengirim ke Gemini (attempt 1/3)...
+[02-04-2026 21.45.56.078] [INFO ] [desadesa-resto@1775140993362] Gemini response diterima dalam 160.8s — 43803 chars / 42.8 KB
+[02-04-2026 21.45.56.081] [INFO ] [desadesa-resto@1775140993362] Stripped markdown code fence dari response
+[02-04-2026 21.45.56.083] [OK   ] [desadesa-resto@1775140993362] HTML diekstrak (dengan DOCTYPE): 43791 chars / 42.8 KB
+[02-04-2026 21.45.56.087] [OK   ] [desadesa-resto@1775140993362] Final HTML siap: 50329 chars / 49.1 KB
+[02-04-2026 21.45.56.088] [DONE ] [desadesa-resto@1775140993362] Generate Gemini selesai! Total waktu: 160.8s | HTML: 49.1 KB
+[02-04-2026 21.49.48.206] [START] [garpoo-cafe@1775141388205] ════════════════════════════════════════════════════════════
+[02-04-2026 21.49.48.207] [START] [garpoo-cafe@1775141388205] Sesi baru dimulai — bisnis: garpoo-cafe
+[02-04-2026 21.49.48.208] [START] [garpoo-cafe@1775141388205] Session ID: garpoo-cafe@1775141388205
+[02-04-2026 21.49.48.209] [INFO ] [garpoo-cafe@1775141388205] Bisnis         : Garpoo Cafe
+[02-04-2026 21.49.48.210] [INFO ] [garpoo-cafe@1775141388205] Kategori       : Kafe
+[02-04-2026 21.49.48.211] [INFO ] [garpoo-cafe@1775141388205] Rating         : 4.3 (1526 ulasan)
+[02-04-2026 21.49.48.212] [INFO ] [garpoo-cafe@1775141388205] Provider dipilih: gemini
+[02-04-2026 21.49.48.213] [INFO ] [garpoo-cafe@1775141388205] Gemini key     : ✓ Ada
+[02-04-2026 21.49.48.215] [INFO ] [garpoo-cafe@1775141388205] OpenRouter key : ✓ Ada
+[02-04-2026 21.49.48.216] [INFO ] [garpoo-cafe@1775141388205] Mengambil kandidat gambar dari Unsplash API...
+[02-04-2026 21.49.48.232] [OK   ] [garpoo-cafe@1775141388205] Unsplash: 24 gambar kandidat siap
+[02-04-2026 21.49.48.234] [INFO ] [garpoo-cafe@1775141388205] Prompt dibangun: 14172 chars / 13.8 KB
+[02-04-2026 21.49.48.236] [INFO ] [garpoo-cafe@1775141388205] Mode: Gemini Auto (dengan fallback OpenRouter)
+[02-04-2026 21.49.48.237] [INFO ] [garpoo-cafe@1775141388205] Gemini model list: gemini-2.5-flash → gemini-2.0-flash → gemini-2.0-flash-lite
+[02-04-2026 21.49.48.238] [INFO ] [garpoo-cafe@1775141388205] ─── Mencoba Gemini: gemini-2.5-flash ───
+[02-04-2026 21.49.48.239] [INFO ] [garpoo-cafe@1775141388205] Mengirim ke Gemini (attempt 1/3)...
+[02-04-2026 21.49.49.766] [ERROR] [garpoo-cafe@1775141388205] (gemini-2.5-flash) Attempt 1 gagal: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent: [503 Service Unavailable] This model is currently experiencing
+[02-04-2026 21.49.49.771] [INFO ] [garpoo-cafe@1775141388205] (gemini-2.5-flash) Retry 2/3 — tunggu 10s...
+[02-04-2026 21.49.59.778] [INFO ] [garpoo-cafe@1775141388205] Mengirim ke Gemini (attempt 2/3)...
+[02-04-2026 21.50.05.416] [ERROR] [garpoo-cafe@1775141388205] (gemini-2.5-flash) Attempt 2 gagal: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent: [503 Service Unavailable] This model is currently experiencing
+[02-04-2026 21.50.05.420] [INFO ] [garpoo-cafe@1775141388205] (gemini-2.5-flash) Retry 3/3 — tunggu 15s...
+[02-04-2026 21.50.08.022] [START] [garpoo-cafe@1775141408022] ════════════════════════════════════════════════════════════
+[02-04-2026 21.50.08.024] [START] [garpoo-cafe@1775141408022] Sesi baru dimulai — bisnis: garpoo-cafe
+[02-04-2026 21.50.08.025] [START] [garpoo-cafe@1775141408022] Session ID: garpoo-cafe@1775141408022
+[02-04-2026 21.50.08.026] [INFO ] [garpoo-cafe@1775141408022] Bisnis         : Garpoo Cafe
+[02-04-2026 21.50.08.026] [INFO ] [garpoo-cafe@1775141408022] Kategori       : Kafe
+[02-04-2026 21.50.08.027] [INFO ] [garpoo-cafe@1775141408022] Rating         : 4.3 (1526 ulasan)
+[02-04-2026 21.50.08.028] [INFO ] [garpoo-cafe@1775141408022] Provider dipilih: google/gemini-2.5-flash
+[02-04-2026 21.50.08.029] [INFO ] [garpoo-cafe@1775141408022] Gemini key     : ✓ Ada
+[02-04-2026 21.50.08.030] [INFO ] [garpoo-cafe@1775141408022] OpenRouter key : ✓ Ada
+[02-04-2026 21.50.08.030] [INFO ] [garpoo-cafe@1775141408022] Mengambil kandidat gambar dari Unsplash API...
+[02-04-2026 21.50.08.037] [OK   ] [garpoo-cafe@1775141408022] Unsplash: 24 gambar kandidat siap
+[02-04-2026 21.50.08.039] [INFO ] [garpoo-cafe@1775141408022] Prompt dibangun: 14172 chars / 13.8 KB
+[02-04-2026 21.50.08.040] [INFO ] [garpoo-cafe@1775141408022] Mode: Direct OpenRouter → google/gemini-2.5-flash
+[02-04-2026 21.50.08.041] [INFO ] [garpoo-cafe@1775141408022] Mengirim request ke OpenRouter (attempt 1/3)...
+[02-04-2026 21.50.08.042] [INFO ] [garpoo-cafe@1775141408022] URL: https://openrouter.ai/api/v1/chat/completions
+[02-04-2026 21.50.08.043] [INFO ] [garpoo-cafe@1775141408022] Model: google/gemini-2.5-flash  |  max_tokens: 65536  |  temperature: 0.7
+[02-04-2026 21.50.11.244] [INFO ] [garpoo-cafe@1775141408022] Response HTTP 200 diterima dalam 3.2s
+[02-04-2026 21.50.20.428] [INFO ] [garpoo-cafe@1775141408022] Mengirim ke Gemini (attempt 3/3)...
+[02-04-2026 21.50.46.563] [ERROR] [garpoo-cafe@1775141408022] Attempt 1 exception: terminated
+[02-04-2026 21.50.46.568] [INFO ] [garpoo-cafe@1775141408022] (google/gemini-2.5-flash) Retry 2/3 — tunggu 10s...
+[02-04-2026 21.50.56.584] [INFO ] [garpoo-cafe@1775141408022] Mengirim request ke OpenRouter (attempt 2/3)...
+[02-04-2026 21.50.56.585] [INFO ] [garpoo-cafe@1775141408022] URL: https://openrouter.ai/api/v1/chat/completions
+[02-04-2026 21.50.56.587] [INFO ] [garpoo-cafe@1775141408022] Model: google/gemini-2.5-flash  |  max_tokens: 65536  |  temperature: 0.7
+[02-04-2026 21.50.58.656] [INFO ] [garpoo-cafe@1775141408022] Response HTTP 200 diterima dalam 2.1s
+[02-04-2026 21.51.57.531] [INFO ] [garpoo-cafe@1775141408022] Token usage — prompt: 6389 | completion: 12780 | total: 19169
+[02-04-2026 21.51.57.535] [INFO ] [garpoo-cafe@1775141408022] Raw response: 32278 chars / 31.5 KB
+[02-04-2026 21.51.57.537] [OK   ] [garpoo-cafe@1775141408022] HTML diekstrak (dengan DOCTYPE): 32278 chars / 31.5 KB
+[02-04-2026 21.51.57.539] [OK   ] [garpoo-cafe@1775141408022] Final HTML siap: 38897 chars / 38.0 KB
+[02-04-2026 21.51.57.540] [DONE ] [garpoo-cafe@1775141408022] Generate selesai! Total waktu: 109.5s | HTML: 38.0 KB
+[02-04-2026 21.54.27.770] [INFO ] [garpoo-cafe@1775141408022] Gemini response diterima dalam 247.3s — 77642 chars / 75.8 KB
+[02-04-2026 21.54.27.773] [WARN ] [garpoo-cafe@1775141408022] HTML tags tidak ditemukan! Returning raw text (77642 chars)
+[02-04-2026 21.54.27.776] [DONE ] [garpoo-cafe@1775141408022] Generate Gemini selesai! Total waktu: 279.5s | HTML: 75.8 KB
+[02-04-2026 22.08.20.119] [START] [kania-beauty-space@1775142500118] ════════════════════════════════════════════════════════════
+[02-04-2026 22.08.20.120] [START] [kania-beauty-space@1775142500118] Sesi baru dimulai — bisnis: kania-beauty-space
+[02-04-2026 22.08.20.121] [START] [kania-beauty-space@1775142500118] Session ID: kania-beauty-space@1775142500118
+[02-04-2026 22.08.20.122] [INFO ] [kania-beauty-space@1775142500118] Bisnis         : Kania Beauty Space
+[02-04-2026 22.08.20.124] [INFO ] [kania-beauty-space@1775142500118] Kategori       : Ahli estetika
+[02-04-2026 22.08.20.125] [INFO ] [kania-beauty-space@1775142500118] Rating         : 4.8 (224 ulasan)
+[02-04-2026 22.08.20.126] [INFO ] [kania-beauty-space@1775142500118] Provider dipilih: google/gemini-2.5-flash
+[02-04-2026 22.08.20.127] [INFO ] [kania-beauty-space@1775142500118] Gemini key     : ✓ Ada
+[02-04-2026 22.08.20.128] [INFO ] [kania-beauty-space@1775142500118] OpenRouter key : ✓ Ada
+[02-04-2026 22.08.20.129] [INFO ] [kania-beauty-space@1775142500118] Mengambil kandidat gambar dari Unsplash API...
+[02-04-2026 22.08.21.717] [OK   ] [kania-beauty-space@1775142500118] Unsplash: 24 gambar kandidat siap
+[02-04-2026 22.08.21.719] [INFO ] [kania-beauty-space@1775142500118] Prompt dibangun: 14659 chars / 14.3 KB
+[02-04-2026 22.08.21.720] [INFO ] [kania-beauty-space@1775142500118] Mode: Direct OpenRouter → google/gemini-2.5-flash
+[02-04-2026 22.08.21.721] [INFO ] [kania-beauty-space@1775142500118] Mengirim request ke OpenRouter (attempt 1/3)...
+[02-04-2026 22.08.21.722] [INFO ] [kania-beauty-space@1775142500118] URL: https://openrouter.ai/api/v1/chat/completions
+[02-04-2026 22.08.21.722] [INFO ] [kania-beauty-space@1775142500118] Model: google/gemini-2.5-flash  |  max_tokens: 65536  |  temperature: 0.7
+[02-04-2026 22.08.33.281] [INFO ] [kania-beauty-space@1775142500118] Response HTTP 200 diterima dalam 11.6s
+[02-04-2026 22.11.17.475] [ERROR] [kania-beauty-space@1775142500118] Attempt 1 exception: terminated
+[02-04-2026 22.11.17.481] [INFO ] [kania-beauty-space@1775142500118] (google/gemini-2.5-flash) Retry 2/3 — tunggu 10s...
+[02-04-2026 22.11.27.488] [INFO ] [kania-beauty-space@1775142500118] Mengirim request ke OpenRouter (attempt 2/3)...
+[02-04-2026 22.11.27.490] [INFO ] [kania-beauty-space@1775142500118] URL: https://openrouter.ai/api/v1/chat/completions
+[02-04-2026 22.11.27.491] [INFO ] [kania-beauty-space@1775142500118] Model: google/gemini-2.5-flash  |  max_tokens: 65536  |  temperature: 0.7
+[02-04-2026 22.11.28.774] [INFO ] [kania-beauty-space@1775142500118] Response HTTP 200 diterima dalam 1.3s
+[02-04-2026 22.12.49.351] [INFO ] [kania-beauty-space@1775142500118] Token usage — prompt: 6567 | completion: 15917 | total: 22484
+[02-04-2026 22.12.49.352] [INFO ] [kania-beauty-space@1775142500118] Raw response: 38514 chars / 37.6 KB
+[02-04-2026 22.12.49.354] [OK   ] [kania-beauty-space@1775142500118] HTML diekstrak (dengan DOCTYPE): 38514 chars / 37.6 KB
+[02-04-2026 22.12.49.357] [OK   ] [kania-beauty-space@1775142500118] Final HTML siap: 45498 chars / 44.4 KB
+[02-04-2026 22.12.49.358] [DONE ] [kania-beauty-space@1775142500118] Generate selesai! Total waktu: 267.6s | HTML: 44.4 KB
+[02-04-2026 22.49.44.658] [START] [kania-beauty-space@1775144984658] ════════════════════════════════════════════════════════════
+[02-04-2026 22.49.44.661] [START] [kania-beauty-space@1775144984658] Sesi baru dimulai — bisnis: kania-beauty-space
+[02-04-2026 22.49.44.663] [START] [kania-beauty-space@1775144984658] Session ID: kania-beauty-space@1775144984658
+[02-04-2026 22.49.44.664] [INFO ] [kania-beauty-space@1775144984658] Bisnis         : Kania Beauty Space
+[02-04-2026 22.49.44.667] [INFO ] [kania-beauty-space@1775144984658] Kategori       : Ahli estetika
+[02-04-2026 22.49.44.670] [INFO ] [kania-beauty-space@1775144984658] Rating         : 4.8 (224 ulasan)
+[02-04-2026 22.49.44.671] [INFO ] [kania-beauty-space@1775144984658] Provider dipilih: google/gemini-2.5-flash
+[02-04-2026 22.49.44.673] [INFO ] [kania-beauty-space@1775144984658] Gemini key     : ✓ Ada
+[02-04-2026 22.49.44.674] [INFO ] [kania-beauty-space@1775144984658] OpenRouter key : ✓ Ada
+[02-04-2026 22.49.44.675] [INFO ] [kania-beauty-space@1775144984658] Mengambil kandidat gambar dari Unsplash API...
+[02-04-2026 22.49.44.684] [OK   ] [kania-beauty-space@1775144984658] Unsplash: 24 gambar kandidat siap
+[02-04-2026 22.49.44.686] [INFO ] [kania-beauty-space@1775144984658] Prompt dibangun: 15822 chars / 15.5 KB
+[02-04-2026 22.49.44.688] [INFO ] [kania-beauty-space@1775144984658] Mode: Direct OpenRouter → google/gemini-2.5-flash
+[02-04-2026 22.49.44.689] [INFO ] [kania-beauty-space@1775144984658] Mengirim request ke OpenRouter (attempt 1/3)...
+[02-04-2026 22.49.44.690] [INFO ] [kania-beauty-space@1775144984658] URL: https://openrouter.ai/api/v1/chat/completions
+[02-04-2026 22.49.44.691] [INFO ] [kania-beauty-space@1775144984658] Model: google/gemini-2.5-flash  |  max_tokens: 65536  |  temperature: 0.7
+[02-04-2026 22.49.47.503] [INFO ] [kania-beauty-space@1775144984658] Response HTTP 200 diterima dalam 2.8s
+[02-04-2026 22.51.01.098] [INFO ] [kania-beauty-space@1775144984658] Token usage — prompt: 6865 | completion: 17755 | total: 24620
+[02-04-2026 22.51.01.104] [INFO ] [kania-beauty-space@1775144984658] Raw response: 44451 chars / 43.4 KB
+[02-04-2026 22.51.01.106] [OK   ] [kania-beauty-space@1775144984658] HTML diekstrak (dengan DOCTYPE): 44451 chars / 43.4 KB
+[02-04-2026 22.51.01.108] [OK   ] [kania-beauty-space@1775144984658] Final HTML siap: 51435 chars / 50.2 KB
+[02-04-2026 22.51.01.110] [DONE ] [kania-beauty-space@1775144984658] Generate selesai! Total waktu: 76.4s | HTML: 50.2 KB

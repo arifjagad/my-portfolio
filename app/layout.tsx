@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/seo";
+import RouteLoadingBar from "@/app/components/RouteLoadingBar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -75,7 +76,10 @@ export default function RootLayout({
       lang="id"
       className={`${inter.variable} ${geistMono.variable}`}
     >
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <RouteLoadingBar />
+        {children}
+      </body>
     </html>
   );
 }
