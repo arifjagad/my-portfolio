@@ -6,8 +6,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { readLastLines, LOG_FILE_PATH } from "@/lib/generate-logger";
+import { requireAdminSession } from "@/lib/admin-route-auth";
 
 export async function GET(req: NextRequest) {
+  const auth = await requireAdminSession(req);
+  if (!auth.ok) return auth.response;
+
   const { searchParams } = new URL(req.url);
   const lines = Math.min(Number(searchParams.get("lines") || "200"), 500);
 

@@ -20,10 +20,10 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-function getServiceClient() {
+function getReadonlyClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!
   );
 }
 
@@ -48,7 +48,7 @@ export default async function DemoDashboardPage({
   const page = Math.max(1, parseInt(sp.page || "1"));
   const offset = (page - 1) * PAGE_SIZE;
 
-  const supabase = getServiceClient();
+  const supabase = getReadonlyClient();
 
   // ── Build query ─────────────────────────────────────────────────────────────
   let query = supabase

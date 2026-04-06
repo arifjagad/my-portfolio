@@ -10,10 +10,10 @@ import { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
-function getServiceClient() {
+function getReadonlyClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!
   );
 }
 
@@ -23,7 +23,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = getServiceClient();
+  const supabase = getReadonlyClient();
   const { data } = await supabase
     .from("demo_businesses")
     .select("nama_bisnis")
@@ -39,7 +39,7 @@ export default async function DemoDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const supabase = getServiceClient();
+  const supabase = getReadonlyClient();
 
   const { data: biz, error } = await supabase
     .from("demo_businesses")

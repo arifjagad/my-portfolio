@@ -30,7 +30,8 @@ export default function DemoRenderer({ html, namaBisnis, nomorTelepon }: Props) 
           srcDoc={html}
           title={`Demo website — ${namaBisnis}`}
           className="w-full h-full border-0 block"
-          sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+          sandbox="allow-scripts allow-popups allow-forms"
+          referrerPolicy="no-referrer"
           loading="eager"
         />
       </div>

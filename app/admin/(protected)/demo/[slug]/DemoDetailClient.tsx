@@ -810,7 +810,8 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
                 srcDoc={biz.generated_html}
                 className="w-full h-full border-0"
                 title={`Preview — ${biz.nama_bisnis}`}
-                sandbox="allow-scripts allow-same-origin"
+                sandbox="allow-scripts"
+                referrerPolicy="no-referrer"
               />
             ) : biz.generated_html ? (
               <div className="h-full flex items-center justify-center text-slate-700 text-sm">

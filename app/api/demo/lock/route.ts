@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdminSession } from "@/lib/admin-route-auth";
 
 function getServiceClient() {
   return createClient(
@@ -16,6 +17,9 @@ function getServiceClient() {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireAdminSession(req);
+    if (!auth.ok) return auth.response;
+
     const { slug, is_locked, reason } = await req.json();
 
     if (!slug || typeof is_locked !== "boolean") {

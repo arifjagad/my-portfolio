@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdminSession } from "@/lib/admin-route-auth";
 
 const VALID_STATUS = ["belum_dikirim", "sudah_dikirim", "deal", "tidak_tertarik"];
 
@@ -18,6 +19,9 @@ function getServiceClient() {
 
 export async function PATCH(req: NextRequest) {
   try {
+    const auth = await requireAdminSession(req);
+    if (!auth.ok) return auth.response;
+
     const { slug, status_pitch } = await req.json();
 
     if (!slug || !status_pitch) {

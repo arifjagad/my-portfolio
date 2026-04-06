@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdminSession } from "@/lib/admin-route-auth";
 
 function getServiceClient() {
   return createClient(
@@ -17,6 +18,9 @@ function getServiceClient() {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireAdminSession(req);
+    if (!auth.ok) return auth.response;
+
     const body = await req.json();
     const slug = (body?.slug || "").trim();
     const html = typeof body?.html === "string" ? body.html.trim() : "";

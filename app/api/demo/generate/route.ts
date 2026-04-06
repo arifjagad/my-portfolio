@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generateDemoHTML } from "@/lib/ai-generator";
+import { requireAdminSession } from "@/lib/admin-route-auth";
+import { rateLimitByIp } from "@/lib/rate-limit";
 
 function getServiceClient() {
   return createClient(
@@ -18,6 +20,27 @@ function getServiceClient() {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireAdminSession(req);
+    if (!auth.ok) return auth.response;
+
+    const rate = rateLimitByIp(req, "api:demo:generate", 10, 60_000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        {
+          error: "Terlalu banyak request generate. Coba lagi sebentar.",
+          retry_after_seconds: rate.retryAfterSec,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rate.retryAfterSec),
+            "X-RateLimit-Limit": String(rate.limit),
+            "X-RateLimit-Remaining": String(rate.remaining),
+          },
+        }
+      );
+    }
+
     const body = await req.json();
     const { slug, force = false, provider } = body;
 
