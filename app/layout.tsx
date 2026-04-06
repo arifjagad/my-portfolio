@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/seo";
 import RouteLoadingBar from "@/app/components/RouteLoadingBar";
@@ -77,7 +78,9 @@ export default function RootLayout({
       className={`${inter.variable} ${geistMono.variable}`}
     >
       <body className="antialiased">
-        <RouteLoadingBar />
+        <Suspense fallback={null}>
+          <RouteLoadingBar />
+        </Suspense>
         {children}
       </body>
     </html>
