@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Metadata } from "next";
+import { LONG_TAIL_KEYWORDS, SHORT_KEYWORDS, absoluteUrl } from "@/lib/seo";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -28,19 +29,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!project) return {};
 
+  const title = `${project.title} - Case Study Web Development`;
+  const description = project.tagline || project.description.substring(0, 150);
+
   return {
-    title: `${project.title} — Portfolio`,
-    description: project.tagline || project.description.substring(0, 150),
+    title,
+    description,
+    keywords: [
+      ...SHORT_KEYWORDS,
+      ...LONG_TAIL_KEYWORDS,
+      project.title,
+      "case study next.js",
+      "case study laravel",
+    ],
+    alternates: {
+      canonical: absoluteUrl(`/projects/${slug}`),
+    },
     openGraph: {
-      title: project.title,
-      description: project.tagline || project.description.substring(0, 150),
+      title,
+      description,
       type: "article",
+      url: absoluteUrl(`/projects/${slug}`),
       images: project.image_url ? [project.image_url] : [],
     },
     twitter: {
       card: "summary_large_image",
-      title: project.title,
-      description: project.tagline || project.description.substring(0, 150),
+      title,
+      description,
       images: project.image_url ? [project.image_url] : [],
     },
   };

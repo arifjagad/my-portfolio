@@ -3,8 +3,26 @@ import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import ScrollToTop from "@/app/components/ScrollToTop";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import type { Metadata } from "next";
+import { LONG_TAIL_KEYWORDS, SHORT_KEYWORDS, absoluteUrl } from "@/lib/seo";
 
 export const revalidate = 3600;
+
+export const metadata: Metadata = {
+  title: "Demo Website Bisnis Lokal",
+  description:
+    "Galeri demo website bisnis lokal di Medan untuk kebutuhan promosi digital: klinik, apotek, barbershop, kafe, restoran, dan UMKM.",
+  keywords: [
+    ...SHORT_KEYWORDS,
+    ...LONG_TAIL_KEYWORDS,
+    "demo website bisnis lokal",
+    "contoh landing page umkm",
+    "jasa website untuk usaha kecil",
+  ],
+  alternates: {
+    canonical: absoluteUrl("/demos"),
+  },
+};
 
 type DemoItem = {
   id: string;

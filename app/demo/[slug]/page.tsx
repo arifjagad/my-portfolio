@@ -14,6 +14,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import DemoRenderer from "./DemoRenderer";
 import { Metadata } from "next";
+import { LONG_TAIL_KEYWORDS, SHORT_KEYWORDS, absoluteUrl } from "@/lib/seo";
 
 // ─── Read-only client (server-side) ──────────────────────────────────────────
 function getReadonlyClient() {
@@ -33,17 +34,43 @@ export async function generateMetadata({
   const supabase = getReadonlyClient();
   const { data } = await supabase
     .from("demo_businesses")
-    .select("nama_bisnis, kategori, alamat")
+    .select("nama_bisnis, kategori, alamat, generated_html, is_locked")
     .eq("slug", slug)
     .single();
 
   if (!data) {
-    return { title: "Demo Page" };
+    return {
+      title: "Demo Page",
+      robots: { index: false, follow: false },
+    };
   }
 
+  const isIndexable = Boolean(data.generated_html) && !data.is_locked;
+  const title = `${data.nama_bisnis} - Demo Website ${data.kategori}`;
+  const description = `Preview website profesional untuk ${data.nama_bisnis}, ${data.kategori} di ${data.alamat || "Medan"}.`;
+
   return {
-    title: `${data.nama_bisnis} — Demo Website`,
-    description: `Preview website profesional untuk ${data.nama_bisnis}, ${data.kategori} di ${data.alamat || "Medan"}.`,
+    title,
+    description,
+    keywords: [
+      ...SHORT_KEYWORDS,
+      ...LONG_TAIL_KEYWORDS,
+      `${data.kategori} Medan`,
+      `${data.nama_bisnis} website`,
+      "demo website bisnis lokal",
+    ],
+    alternates: {
+      canonical: absoluteUrl(`/demo/${slug}`),
+    },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: absoluteUrl(`/demo/${slug}`),
+    },
+    robots: isIndexable
+      ? { index: true, follow: true }
+      : { index: false, follow: false },
   };
 }
 

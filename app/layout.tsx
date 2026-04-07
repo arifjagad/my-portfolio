@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
-import { SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/seo";
+import { GLOBAL_KEYWORDS, SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/seo";
 import RouteLoadingBar from "@/app/components/RouteLoadingBar";
 
 const inter = Inter({
@@ -20,12 +20,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — Fullstack Developer`,
+    default: `${SITE_NAME} — Jasa Website Medan | Fullstack Developer`,
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Portfolio Arif Jagad, Fullstack Developer berbasis di Medan. Spesialis Next.js, Laravel, dan solusi web untuk bisnis lokal.",
-  keywords: ["Fullstack Developer", "Medan", "Next.js", "Laravel", "Web Development"],
+    "Jasa pembuatan website di Medan oleh Arif Jagad. Fullstack Developer spesialis Next.js dan Laravel untuk website bisnis lokal, company profile, landing page, dan demo website SEO-friendly.",
+  keywords: GLOBAL_KEYWORDS,
+  category: "technology",
   authors: [{ name: "Arif Jagad", url: "https://github.com/arifjagad" }],
   alternates: {
     canonical: absoluteUrl("/"),
@@ -42,9 +43,9 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: `${SITE_NAME} — Fullstack Developer`,
+    title: `${SITE_NAME} — Jasa Website Medan | Fullstack Developer`,
     description:
-      "Portfolio Arif Jagad, Fullstack Developer berbasis di Medan. Spesialis Next.js, Laravel, dan solusi web untuk bisnis lokal.",
+      "Jasa pembuatan website di Medan oleh Arif Jagad. Spesialis Next.js dan Laravel untuk website bisnis lokal yang cepat, modern, dan SEO-ready.",
     url: absoluteUrl("/"),
     siteName: SITE_NAME,
     type: "website",
@@ -60,9 +61,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} — Fullstack Developer`,
+    title: `${SITE_NAME} — Jasa Website Medan | Fullstack Developer`,
     description:
-      "Portfolio Arif Jagad, Fullstack Developer berbasis di Medan. Spesialis Next.js, Laravel, dan solusi web untuk bisnis lokal.",
+      "Jasa pembuatan website di Medan oleh Arif Jagad. Solusi Next.js dan Laravel untuk bisnis lokal yang ingin naik level secara digital.",
     images: [absoluteUrl("/opengraph-image.png")],
   },
 };

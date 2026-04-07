@@ -13,6 +13,12 @@ import ContactSection from "./components/ContactSection";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import { Project, Experience, Testimonial, TechStack, Profile } from "@/lib/supabase";
+import {
+  LONG_TAIL_KEYWORDS,
+  SHORT_KEYWORDS,
+  SITE_NAME,
+  absoluteUrl,
+} from "@/lib/seo";
 
 // Revalidate halaman setiap 1 jam
 export const revalidate = 3600;
@@ -92,18 +98,36 @@ export async function generateMetadata(): Promise<Metadata> {
 
   if (!profile) return {};
 
+  const homeKeywords = [
+    ...SHORT_KEYWORDS,
+    ...LONG_TAIL_KEYWORDS,
+    "web developer indonesia",
+    "developer website umkm medan",
+  ];
+
+  const title = `${profile.name} - ${profile.role} | Jasa Website Medan`;
+  const description =
+    profile.short_bio ||
+    "Portfolio Arif Jagad berisi studi kasus project web development, demo website bisnis lokal, dan layanan pembuatan website SEO-friendly di Medan.";
+
   return {
-    title: `${profile.name} — ${profile.role}`,
-    description: profile.short_bio,
+    title,
+    description,
+    keywords: homeKeywords,
+    alternates: {
+      canonical: absoluteUrl("/"),
+    },
     openGraph: {
-      title: `${profile.name} — ${profile.role}`,
-      description: profile.short_bio,
+      title,
+      description,
       type: "website",
+      url: absoluteUrl("/"),
+      siteName: SITE_NAME,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${profile.name} — ${profile.role}`,
-      description: profile.short_bio,
+      title,
+      description,
     },
   };
 }

@@ -5,8 +5,25 @@ import Footer from "@/app/components/Footer";
 import ScrollToTop from "@/app/components/ScrollToTop";
 import Link from "next/link";
 import type { Project } from "@/lib/supabase";
+import type { Metadata } from "next";
+import { LONG_TAIL_KEYWORDS, SHORT_KEYWORDS, absoluteUrl } from "@/lib/seo";
 
 export const revalidate = 3600;
+
+export const metadata: Metadata = {
+  title: "Project Web Development",
+  description:
+    "Kumpulan project web development Arif Jagad: Next.js, Laravel, dashboard admin, sistem custom, dan website bisnis lokal yang SEO-friendly.",
+  keywords: [
+    ...SHORT_KEYWORDS,
+    ...LONG_TAIL_KEYWORDS,
+    "project next.js indonesia",
+    "studi kasus web development",
+  ],
+  alternates: {
+    canonical: absoluteUrl("/projects"),
+  },
+};
 
 export default async function AllProjectsPage() {
   const supabase = await createSupabaseServerClient();
