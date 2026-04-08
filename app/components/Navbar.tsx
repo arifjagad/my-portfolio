@@ -4,13 +4,17 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
-const NAV_LINKS = [
-  { href: "/#about",        label: "Tentang" },
-  { href: "/#projects",     label: "Project" },
-  { href: "/demos",         label: "Demo" },
-  { href: "/#experience",   label: "Pengalaman" },
+const SECTION_LINKS = [
+  { href: "/#about", label: "Tentang" },
+  { href: "/#projects", label: "Project" },
+  { href: "/#experience", label: "Pengalaman" },
   { href: "/#testimonials", label: "Testimoni" },
-  { href: "/#kontak",       label: "Kontak" },
+  { href: "/#kontak", label: "Kontak" },
+];
+
+const PAGE_LINKS = [
+  { href: "/blog", label: "Artikel" },
+  { href: "/demos", label: "Demo" },
 ];
 
 export default function Navbar() {
@@ -44,7 +48,7 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map((link) => (
+          {SECTION_LINKS.map((link) => (
             <a
               key={link.href}
               href={link.href}
@@ -53,6 +57,19 @@ export default function Navbar() {
             >
               {link.label}
             </a>
+          ))}
+
+          <span className="mx-1 h-4 w-px bg-navy-700/80" aria-hidden="true" />
+
+          {PAGE_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              id={`nav-${link.label.toLowerCase()}`}
+              className="relative px-4 py-2 font-mono text-xs font-semibold text-forest-200 transition-colors tracking-widest uppercase rounded-full bg-forest-700/10 hover:bg-forest-700/20"
+            >
+              {link.label}
+            </Link>
           ))}
         </nav>
 
@@ -63,9 +80,9 @@ export default function Navbar() {
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Toggle menu"
         >
-          <span className={`block h-[2px] w-6 rounded-full bg-slate-300 transition-transform duration-300 ${menuOpen ? "translate-y-2 rotate-45 bg-forest-200" : "group-hover:bg-forest-200"}`} />
-          <span className={`block h-[2px] w-4 rounded-full bg-slate-300 transition-opacity duration-300 ml-auto ${menuOpen ? "opacity-0" : "group-hover:bg-forest-200"}`} />
-          <span className={`block h-[2px] w-6 rounded-full bg-slate-300 transition-transform duration-300 ${menuOpen ? "-translate-y-2 -rotate-45 bg-forest-200" : "group-hover:bg-forest-200"}`} />
+          <span className={`block h-0.5 w-6 rounded-full bg-slate-300 transition-transform duration-300 ${menuOpen ? "translate-y-2 rotate-45 bg-forest-200" : "group-hover:bg-forest-200"}`} />
+          <span className={`ml-auto block h-0.5 w-4 rounded-full bg-slate-300 transition-opacity duration-300 ${menuOpen ? "opacity-0" : "group-hover:bg-forest-200"}`} />
+          <span className={`block h-0.5 w-6 rounded-full bg-slate-300 transition-transform duration-300 ${menuOpen ? "-translate-y-2 -rotate-45 bg-forest-200" : "group-hover:bg-forest-200"}`} />
         </button>
       </div>
 
@@ -80,7 +97,10 @@ export default function Navbar() {
             className="overflow-hidden border-t border-navy-800/50 bg-navy-950/95 backdrop-blur-xl md:hidden"
           >
             <nav className="section-container flex flex-col py-6 gap-2">
-              {NAV_LINKS.map((link) => (
+              <p className="px-4 pb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+                Bagian Homepage
+              </p>
+              {SECTION_LINKS.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
@@ -89,6 +109,22 @@ export default function Navbar() {
                 >
                   {link.label}
                 </a>
+              ))}
+
+              <div className="my-2 h-px bg-navy-800/80" />
+
+              <p className="px-4 pb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+                Halaman Terpisah
+              </p>
+              {PAGE_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="rounded-lg bg-forest-700/10 px-4 py-3 font-mono text-sm font-semibold tracking-widest uppercase text-forest-200 transition-all hover:bg-forest-700/20 hover:pl-6"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
               ))}
             </nav>
           </motion.div>

@@ -21,6 +21,7 @@ export async function GET() {
   const staticUrls = [
     { loc: absoluteUrl("/"), changefreq: "weekly", priority: "1.0" },
     { loc: absoluteUrl("/projects"), changefreq: "weekly", priority: "0.9" },
+    { loc: absoluteUrl("/blog"), changefreq: "daily", priority: "0.8" },
     { loc: absoluteUrl("/demos"), changefreq: "weekly", priority: "0.7" },
   ];
 
@@ -34,7 +35,7 @@ export async function GET() {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const [{ data: projects }, { data: demos }] = await Promise.all([
+    const [{ data: projects }, { data: demos }, { data: posts }, { data: categories }, { data: tags }] = await Promise.all([
       supabase
         .from("projects")
         .select("slug, created_at")
@@ -45,6 +46,21 @@ export async function GET() {
         .not("generated_html", "is", null)
         .eq("is_locked", false)
         .order("generated_at", { ascending: false }),
+      supabase
+        .from("blog_posts")
+        .select("slug, updated_at")
+        .eq("status", "published")
+        .eq("robots_index", true)
+        .order("updated_at", { ascending: false }),
+      supabase
+        .from("blog_categories")
+        .select("slug")
+        .eq("is_visible", true)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("blog_tags")
+        .select("slug")
+        .order("name", { ascending: true }),
     ]);
 
     const projectUrls = (projects ?? []).map((item) => ({
@@ -59,7 +75,25 @@ export async function GET() {
       priority: "0.6",
     }));
 
-    dynamicUrls = [...projectUrls, ...demoUrls];
+    const blogUrls = (posts ?? []).map((item) => ({
+      loc: absoluteUrl(`/blog/${item.slug}`),
+      changefreq: "monthly",
+      priority: "0.7",
+    }));
+
+    const categoryUrls = (categories ?? []).map((item) => ({
+      loc: absoluteUrl(`/blog/kategori/${item.slug}`),
+      changefreq: "weekly",
+      priority: "0.5",
+    }));
+
+    const tagUrls = (tags ?? []).map((item) => ({
+      loc: absoluteUrl(`/blog/tag/${item.slug}`),
+      changefreq: "weekly",
+      priority: "0.4",
+    }));
+
+    dynamicUrls = [...projectUrls, ...demoUrls, ...blogUrls, ...categoryUrls, ...tagUrls];
   }
 
   const urls = [...staticUrls, ...dynamicUrls];

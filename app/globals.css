@@ -183,3 +183,124 @@ body {
     linear-gradient(to bottom, rgba(30, 58, 74, 0.28) 1px, transparent 1px);
   background-size: 36px 36px;
 }
+
+/* ============================================================
+   TIPTAP OUTPUT — public blog content styling
+   ============================================================ */
+.tiptap-output {
+  color: #cbd5e1;
+  font-size: 1.1rem;
+  line-height: 1.9;
+}
+
+.tiptap-output > *:first-child {
+  margin-top: 0;
+}
+
+.tiptap-output > *:last-child {
+  margin-bottom: 0;
+}
+
+.tiptap-output p {
+  margin: 1rem 0;
+  color: #cbd5e1;
+}
+
+.tiptap-output h2 {
+  margin: 2.25rem 0 0.85rem;
+  font-size: 2rem;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.tiptap-output h3 {
+  margin: 1.65rem 0 0.7rem;
+  font-size: 1.55rem;
+  line-height: 1.25;
+  font-weight: 650;
+  color: #e2e8f0;
+}
+
+.tiptap-output ul,
+.tiptap-output ol {
+  margin: 1rem 0 1.25rem;
+  padding-left: 1.35rem;
+}
+
+.tiptap-output ul {
+  list-style: disc;
+}
+
+.tiptap-output ol {
+  list-style: decimal;
+}
+
+.tiptap-output li {
+  margin: 0.35rem 0;
+}
+
+.tiptap-output li p {
+  margin: 0.2rem 0;
+}
+
+.tiptap-output blockquote {
+  margin: 1.4rem 0;
+  border-left: 4px solid #2d6a4f;
+  padding: 0.25rem 0 0.25rem 1rem;
+  color: #e2e8f0;
+  background: rgba(45, 106, 79, 0.08);
+  border-radius: 0 8px 8px 0;
+}
+
+.tiptap-output a {
+  color: #95d5b2;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tiptap-output a:hover {
+  color: #b7e4c7;
+}
+
+.tiptap-output hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 1px solid #1e3a4a;
+}
+
+.tiptap-output img {
+  margin: 1.35rem 0;
+  width: 100%;
+  max-width: 100%;
+  border-radius: 0.9rem;
+  border: 1px solid #1e3a4a;
+}
+
+.tiptap-output pre {
+  margin: 1.2rem 0;
+  overflow-x: auto;
+  border: 1px solid #1e3a4a;
+  border-radius: 0.75rem;
+  background: #0b1623;
+  padding: 0.9rem 1rem;
+  line-height: 1.55;
+}
+
+.tiptap-output code {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.tiptap-output p code,
+.tiptap-output li code {
+  border-radius: 6px;
+  background: #1b2838;
+  padding: 0.12rem 0.35rem;
+  color: #dbeafe;
+  font-size: 0.93em;
+}
+
+.tiptap-output input[type="checkbox"] {
+  margin-right: 0.45rem;
+  accent-color: #2d6a4f;
+}
