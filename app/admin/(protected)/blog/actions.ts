@@ -23,6 +23,22 @@ function estimateReadingTimeMinutes(html: string | null): number {
   return Math.max(1, Math.ceil(words / 200));
 }
 
+function parseLocalDateInputToIso(input: string | null): string | null {
+  if (!input) return null;
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input.trim());
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  const localDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+  if (Number.isNaN(localDate.getTime())) return null;
+
+  return localDate.toISOString();
+}
+
 async function uploadSingleImage(
   pathPrefix: string,
   file: File
@@ -209,13 +225,20 @@ export async function saveBlogPost(
 
   const publishedAtRaw = (formData.get("published_at") as string)?.trim();
   const scheduledAtRaw = (formData.get("scheduled_at") as string)?.trim();
+  const now = new Date();
 
-  let publishedAt: string | null = publishedAtRaw ? new Date(publishedAtRaw).toISOString() : null;
-  let scheduledAt: string | null = scheduledAtRaw ? new Date(scheduledAtRaw).toISOString() : null;
+  let publishedAt: string | null = parseLocalDateInputToIso(publishedAtRaw || null);
+  let scheduledAt: string | null = parseLocalDateInputToIso(scheduledAtRaw || null);
 
-  if (status === "published" && !publishedAt) {
-    publishedAt = new Date().toISOString();
+  if (status === "published") {
+    if (!publishedAt) {
+      publishedAt = now.toISOString();
+    } else if (new Date(publishedAt).getTime() > now.getTime()) {
+      // A post marked as published should be crawlable immediately.
+      publishedAt = now.toISOString();
+    }
   }
+
   if (status !== "scheduled") {
     scheduledAt = null;
   }
