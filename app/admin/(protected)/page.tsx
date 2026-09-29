@@ -1,14 +1,14 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getServiceClient } from "@/lib/supabase-admin";
 
 export default async function AdminDashboardPage() {
-  const supabase = await createSupabaseServerClient();
+  const demoDb = getServiceClient();
 
   // Ambil summary data (opsional — bisa null saat Supabase belum penuh dikonfigurasi)
   const [{ count: totalBusiness }, { count: generated }, { count: deal }] =
     await Promise.all([
-      supabase.from("demo_businesses").select("*", { count: "exact", head: true }),
-      supabase.from("demo_businesses").select("*", { count: "exact", head: true }).not("generated_html", "is", null),
-      supabase.from("demo_businesses").select("*", { count: "exact", head: true }).eq("status_pitch", "deal"),
+      demoDb.from("demo_businesses").select("*", { count: "exact", head: true }),
+      demoDb.from("demo_businesses").select("*", { count: "exact", head: true }).not("generated_at", "is", null),
+      demoDb.from("demo_businesses").select("*", { count: "exact", head: true }).eq("status_pitch", "deal"),
     ]).catch(() => [
       { count: null }, { count: null }, { count: null },
     ]) as [{ count: number | null }, { count: number | null }, { count: number | null }];

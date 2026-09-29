@@ -20,6 +20,8 @@ function LoginForm() {
   useEffect(() => {
     if (errorParam === "not_configured") {
       toast.error("Supabase belum dikonfigurasi. Isi file .env.local terlebih dahulu.");
+    } else if (errorParam === "forbidden") {
+      toast.error("Akun ini tidak terdaftar sebagai admin.");
     }
   }, [errorParam]);
 

@@ -11,18 +11,10 @@
  */
 
 import { notFound } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
+import { getServiceClient } from "@/lib/supabase-admin";
 import DemoRenderer from "./DemoRenderer";
 import { Metadata } from "next";
 import { LONG_TAIL_KEYWORDS, SHORT_KEYWORDS, absoluteUrl } from "@/lib/seo";
-
-// ─── Read-only client (server-side) ──────────────────────────────────────────
-function getReadonlyClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!
-  );
-}
 
 // ─── generateMetadata ─────────────────────────────────────────────────────────
 export async function generateMetadata({
@@ -31,7 +23,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = getReadonlyClient();
+  const supabase = getServiceClient();
   const { data } = await supabase
     .from("demo_businesses")
     .select("nama_bisnis, kategori, alamat, generated_html, is_locked")
@@ -81,12 +73,12 @@ export default async function DemoPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const supabase = getReadonlyClient();
+  const supabase = getServiceClient();
 
   const { data: biz, error } = await supabase
     .from("demo_businesses")
     .select(
-      "slug, nama_bisnis, kategori, alamat, nomor_telepon, generated_html, generated_at, generation_version, is_locked, lock_reason, enriched_data"
+      "slug, nama_bisnis, kategori, alamat, nomor_telepon, generated_html, is_locked"
     )
     .eq("slug", slug)
     .single();
@@ -108,6 +100,7 @@ export default async function DemoPage({
   // ── RENDER HTML ─────────────────────────────────────────────────────────────
   return (
     <DemoRenderer
+      slug={biz.slug}
       html={biz.generated_html}
       namaBisnis={biz.nama_bisnis}
       nomorTelepon={biz.nomor_telepon}

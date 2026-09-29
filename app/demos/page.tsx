@@ -2,7 +2,7 @@ import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import ScrollToTop from "@/app/components/ScrollToTop";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getServiceClient } from "@/lib/supabase-admin";
 import type { Metadata } from "next";
 import { LONG_TAIL_KEYWORDS, SHORT_KEYWORDS, absoluteUrl } from "@/lib/seo";
 
@@ -45,11 +45,11 @@ function formatDate(value: string | null) {
 }
 
 export default async function AllDemosPage() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = getServiceClient();
   const { data } = await supabase
     .from("demo_businesses")
     .select("id, slug, nama_bisnis, kategori, alamat, rating, jumlah_ulasan, generated_at")
-    .not("generated_html", "is", null)
+    .not("generated_at", "is", null)
     .eq("is_locked", false)
     .order("generated_at", { ascending: false });
 

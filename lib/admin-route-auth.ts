@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminEmail } from "@/lib/admin-access";
 
 type RequireAdminResult =
   | { ok: true }
@@ -39,6 +40,13 @@ export async function requireAdminSession(req: NextRequest): Promise<RequireAdmi
     return {
       ok: false,
       response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+
+  if (!isAdminEmail(user.email)) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     };
   }
 

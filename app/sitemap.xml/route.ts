@@ -1,5 +1,6 @@
 import { absoluteUrl } from "@/lib/seo";
 import { createClient } from "@supabase/supabase-js";
+import { getServiceClient } from "@/lib/supabase-admin";
 
 const XML_HEADERS = {
   "Content-Type": "application/xml; charset=utf-8",
@@ -40,10 +41,10 @@ export async function GET() {
         .from("projects")
         .select("slug, created_at")
         .order("created_at", { ascending: false }),
-      supabase
+      getServiceClient()
         .from("demo_businesses")
         .select("slug, generated_at")
-        .not("generated_html", "is", null)
+        .not("generated_at", "is", null)
         .eq("is_locked", false)
         .order("generated_at", { ascending: false }),
       supabase

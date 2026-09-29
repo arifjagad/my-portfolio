@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminEmail } from "@/lib/admin-access";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
@@ -42,6 +43,10 @@ export async function middleware(req: NextRequest) {
     const loginUrl = new URL("/admin/login", req.url);
     loginUrl.searchParams.set("redirect", req.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (!isAdminEmail(user.email)) {
+    return NextResponse.redirect(new URL("/admin/login?error=forbidden", req.url));
   }
 
   return res;

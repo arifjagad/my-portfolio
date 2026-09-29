@@ -4,28 +4,25 @@
  *
  * Fitur:
  * - Tabel semua bisnis target dengan status badge
- * - Filter: kategori, status generate, status pitch, search
+ * - Filter: kategori, status generate, status pitch (+ perlu follow-up), search
  * - Pagination 50 per halaman
  * - Quick action: langsung buka form per bisnis
+ * - Generate massal untuk baris terpilih
+ *
+ * Status "sudah generate" dibaca dari generated_at, bukan generated_html,
+ * agar list tidak menarik ~40 KB HTML per baris.
  */
 
-import { createClient } from "@supabase/supabase-js";
-import Link from "next/link";
+import { getServiceClient } from "@/lib/supabase-admin";
 import DemoFilterClient from "./DemoFilterClient";
 import { Metadata } from "next";
+import { FOLLOW_UP_AFTER_DAYS } from "@/lib/demo-pitch";
 
 export const metadata: Metadata = {
   title: "Demo Bisnis — Admin",
 };
 
 export const dynamic = "force-dynamic";
-
-function getReadonlyClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!
-  );
-}
 
 interface SearchParams {
   search?: string;
@@ -48,13 +45,13 @@ export default async function DemoDashboardPage({
   const page = Math.max(1, parseInt(sp.page || "1"));
   const offset = (page - 1) * PAGE_SIZE;
 
-  const supabase = getReadonlyClient();
+  const supabase = getServiceClient();
 
   // ── Build query ─────────────────────────────────────────────────────────────
   let query = supabase
     .from("demo_businesses")
     .select(
-      "id, slug, nama_bisnis, kategori, rating, jumlah_ulasan, nomor_telepon, enriched_data, enriched_at, generated_html, generated_at, generation_version, status_pitch, is_locked",
+      "id, slug, nama_bisnis, kategori, rating, jumlah_ulasan, nomor_telepon, researched_at, generated_at, generation_version, status_pitch, pitched_at, visit_count, last_visited_at, is_locked",
       { count: "exact" }
     )
     .order("nama_bisnis", { ascending: true });
@@ -65,13 +62,16 @@ export default async function DemoDashboardPage({
   if (sp.kategori && sp.kategori !== "all") {
     query = query.eq("kategori", sp.kategori);
   }
-  if (sp.status_pitch && sp.status_pitch !== "all") {
+  const followUpCutoff = new Date(Date.now() - FOLLOW_UP_AFTER_DAYS * 86_400_000).toISOString();
+  if (sp.status_pitch === "follow_up") {
+    query = query.eq("status_pitch", "sudah_dikirim").lte("pitched_at", followUpCutoff);
+  } else if (sp.status_pitch && sp.status_pitch !== "all") {
     query = query.eq("status_pitch", sp.status_pitch);
   }
   if (sp.status_generate === "generated") {
-    query = query.not("generated_html", "is", null);
+    query = query.not("generated_at", "is", null);
   } else if (sp.status_generate === "not_generated") {
-    query = query.is("generated_html", null);
+    query = query.is("generated_at", null);
   }
   if (sp.rating && sp.rating !== "all") {
     query = query.gte("rating", parseFloat(sp.rating));
@@ -80,31 +80,29 @@ export default async function DemoDashboardPage({
     query = query.gte("jumlah_ulasan", parseInt(sp.jumlah_ulasan, 10));
   }
 
-  const { data: businesses, count } = await query.range(
-    offset,
-    offset + PAGE_SIZE - 1
-  );
+  const countOnly = () =>
+    supabase.from("demo_businesses").select("*", { count: "exact", head: true });
 
-  // ── Stats ringkas ────────────────────────────────────────────────────────────
-  const { count: totalCount } = await supabase
-    .from("demo_businesses")
-    .select("*", { count: "exact", head: true });
-
-  const { count: generatedCount } = await supabase
-    .from("demo_businesses")
-    .select("*", { count: "exact", head: true })
-    .not("generated_html", "is", null);
-
-  const { count: dealCount } = await supabase
-    .from("demo_businesses")
-    .select("*", { count: "exact", head: true })
-    .eq("status_pitch", "deal");
-
-  // ── Kategori list untuk filter ───────────────────────────────────────────────
-  const { data: kategoriRows } = await supabase
-    .from("demo_businesses")
-    .select("kategori")
-    .order("kategori");
+  // ── List + stats ringkas + kategori (paralel) ────────────────────────────────
+  const [
+    { data: businesses, count, error: listError },
+    { count: totalCount },
+    { count: generatedCount },
+    { count: sentCount },
+    { count: openedCount },
+    { count: followUpCount },
+    { count: dealCount },
+    { data: kategoriRows },
+  ] = await Promise.all([
+    query.range(offset, offset + PAGE_SIZE - 1),
+    countOnly(),
+    countOnly().not("generated_at", "is", null),
+    countOnly().not("pitched_at", "is", null),
+    countOnly().not("pitched_at", "is", null).gt("visit_count", 0),
+    countOnly().eq("status_pitch", "sudah_dikirim").lte("pitched_at", followUpCutoff),
+    countOnly().eq("status_pitch", "deal"),
+    supabase.from("demo_businesses").select("kategori").order("kategori"),
+  ]);
   const kategoriList = [
     ...new Set((kategoriRows || []).map((r: any) => r.kategori)),
   ].sort();
@@ -124,7 +122,7 @@ export default async function DemoDashboardPage({
       </div>
 
       {/* Stats cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard label="Total Target" value={totalCount || 0} color="slate" />
         <StatCard
           label="Sudah Generate"
@@ -132,13 +130,33 @@ export default async function DemoDashboardPage({
           color="emerald"
           sub={`${Math.round(((generatedCount || 0) / (totalCount || 1)) * 100)}%`}
         />
+        <StatCard label="Sudah Dikirim" value={sentCount || 0} color="sky" />
         <StatCard
-          label="Belum Generate"
-          value={(totalCount || 0) - (generatedCount || 0)}
+          label="Demo Dibuka"
+          value={openedCount || 0}
+          color="emerald"
+          sub={sentCount ? `${Math.round(((openedCount || 0) / sentCount) * 100)}% dari yang dikirim` : undefined}
+        />
+        <StatCard
+          label="Perlu Follow-up"
+          value={followUpCount || 0}
           color="amber"
+          sub={`dikirim ≥ ${FOLLOW_UP_AFTER_DAYS} hari lalu`}
         />
         <StatCard label="Deal" value={dealCount || 0} color="sky" />
       </div>
+
+      {listError && (
+        <div className="rounded-xl border border-red-900/60 bg-red-950/30 p-4 text-sm text-red-300">
+          <p className="font-medium">Gagal memuat daftar bisnis</p>
+          <p className="mt-1 text-xs text-red-400/80 font-mono">{listError.message}</p>
+          {listError.code === "42703" && (
+            <p className="mt-2 text-xs text-red-300/90">
+              Kolom database belum lengkap. Jalankan migration terbaru di folder <span className="font-mono">supabase/</span> (v2, lalu <span className="font-mono">migration_demo_v3_research.sql</span>) di Supabase SQL Editor.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Filter + Table (client component) */}
       <DemoFilterClient

@@ -5,10 +5,27 @@
  * Client component: form enrichment + generate controls + iframe preview
  */
 
-import { useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Select, { type GroupBase, type StylesConfig, type SingleValue } from "react-select";
 import { OPENROUTER_MODELS } from "@/lib/openrouter-models";
+import {
+  DEFAULT_PROVIDER,
+  NINEROUTER_DEFAULT_MODEL,
+  NINEROUTER_PREFIX,
+  isNineRouterProvider,
+} from "@/lib/ai-providers";
+import { absoluteUrl } from "@/lib/seo";
+import {
+  buildPitchMessage,
+  buildWhatsAppLink,
+  formatRelativeDays,
+  needsFollowUp,
+  normalizePhone,
+  FOLLOW_UP_AFTER_DAYS,
+} from "@/lib/demo-pitch";
+import type { BrandBrief } from "@/lib/brand-brief";
+import BrandBriefPanel from "./BrandBriefPanel";
 
 interface Business {
   id: string;
@@ -22,10 +39,16 @@ interface Business {
   link_gmaps: string | null;
   enriched_data: any;
   enriched_at: string | null;
+  research_brief: BrandBrief | null;
+  researched_at: string | null;
+  brand_images: string[] | null;
   generated_html: string | null;
   generated_at: string | null;
   generation_version: number;
   status_pitch: string;
+  pitched_at: string | null;
+  visit_count: number | null;
+  last_visited_at: string | null;
   is_locked: boolean;
   lock_reason: string | null;
 }
@@ -38,10 +61,10 @@ const PITCH_OPTIONS = [
 ];
 
 // ── react-select types ────────────────────────────────────────────────
-type ModelOption = { value: string; label: string; ctx?: number; group: "gemini" | "openrouter" };
+type ModelOption = { value: string; label: string; ctx?: number; group: "9router" | "gemini" | "openrouter" };
 type ModelGroup  = GroupBase<ModelOption>;
 
-const MODEL_OPTIONS: ModelGroup[] = [
+const REMOTE_MODEL_GROUPS: ModelGroup[] = [
   {
     label: "── Google Gemini ──",
     options: [
@@ -131,17 +154,13 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
 
   const [biz, setBiz] = useState(initial);
 
-  // ── Enrichment form state ────────────────────────────────────────────────────
+  // ── Riset & catatan ──────────────────────────────────────────────────────────
+  // Enrichment manual lama (jam buka, layanan, dst.) tetap disimpan apa adanya;
+  // form-nya diganti Brand Brief hasil riset. Catatan internal tetap bisa diedit.
   const ed = biz.enriched_data || {};
-  const [jamBuka, setJamBuka] = useState(ed.jam_buka || "");
-  const [deskripsi, setDeskripsi] = useState(ed.deskripsi || "");
-  const [layanan, setLayanan] = useState(
-    (ed.layanan || []).join("\n")
-  );
-  const [keunggulan, setKeunggulan] = useState(
-    (ed.keunggulan || []).join("\n")
-  );
   const [catatan, setCatatan] = useState(ed.catatan_internal || "");
+  const [brandImages, setBrandImages] = useState<string[]>(biz.brand_images ?? []);
+  const [researching, setResearching] = useState(false);
   const [manualHtml, setManualHtml] = useState(biz.generated_html || "");
 
   // ── UI state ─────────────────────────────────────────────────────────────────
@@ -156,8 +175,42 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
   const [previewMode, setPreviewMode] = useState<"iframe" | "none">(
     biz.generated_html ? "iframe" : "none"
   );
-  // Model AI selector: "gemini" = default Gemini + auto-fallback OpenRouter
-  const [selectedProvider, setSelectedProvider] = useState<string>("gemini");
+  // Model AI selector: default 9router lokal; "gemini" = Gemini API + auto-fallback OpenRouter
+  const [selectedProvider, setSelectedProvider] = useState<string>(DEFAULT_PROVIDER);
+  const [nineRouterModels, setNineRouterModels] = useState<string[]>([NINEROUTER_DEFAULT_MODEL]);
+  const [nineRouterError, setNineRouterError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/demo/models")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.models) && data.models.length > 0) setNineRouterModels(data.models);
+        if (data.error) setNineRouterError(data.error);
+        else if (data.apiKeyConfigured === false) setNineRouterError("NINEROUTER_API_KEY belum diisi di .env.local");
+      })
+      .catch(() => setNineRouterError("Gagal memuat daftar model 9router"));
+  }, []);
+
+  const modelOptions = useMemo<ModelGroup[]>(
+    () => [
+      {
+        label: "── 9router (lokal) ──",
+        options: nineRouterModels.map((id) => ({
+          value: `${NINEROUTER_PREFIX}${id}`,
+          label: id === NINEROUTER_DEFAULT_MODEL ? `★ ${id}` : id,
+          group: "9router" as const,
+        })),
+      },
+      ...REMOTE_MODEL_GROUPS,
+    ],
+    [nineRouterModels]
+  );
+  const [polish, setPolish] = useState(true);
+
+  // ── Pitch WhatsApp ───────────────────────────────────────────────────────────
+  const demoUrl = absoluteUrl(`/demo/${biz.slug}`);
+  const phone = normalizePhone(biz.nomor_telepon);
+  const [pitchMessage, setPitchMessage] = useState(() => buildPitchMessage(biz, demoUrl));
 
   // ── Live log viewer ────────────────────────────────────────────
   const [logLines, setLogLines] = useState<string[]>([]);
@@ -166,7 +219,7 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
 
   async function fetchLogs() {
     try {
-      const res = await fetch("/api/demo/generate-log?lines=150");
+      const res = await fetch(`/api/demo/generate-log?slug=${encodeURIComponent(biz.slug)}&lines=150`);
       if (!res.ok) return;
       const data = await res.json();
       setLogLines(data.lines || []);
@@ -196,19 +249,18 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
     setTimeout(() => setToast(null), 3500);
   }
 
-  // ── Collect enriched data ────────────────────────────────────────────────────
+  // ── Catatan internal (disimpan di enriched_data, field lama dipertahankan) ──
   function collectEnrichedData() {
     return {
       slug: biz.slug,
-      jam_buka: jamBuka.trim() || null,
-      deskripsi: deskripsi.trim() || null,
-      layanan: layanan.split("\n").map((s: string) => s.trim()).filter(Boolean),
-      keunggulan: keunggulan.split("\n").map((s: string) => s.trim()).filter(Boolean),
+      jam_buka: ed.jam_buka ?? null,
+      deskripsi: ed.deskripsi ?? null,
+      layanan: ed.layanan ?? [],
+      keunggulan: ed.keunggulan ?? [],
       catatan_internal: catatan.trim() || null,
     };
   }
 
-  // ── Save enrichment ──────────────────────────────────────────────────────────
   async function handleSave() {
     setSaving(true);
     try {
@@ -224,12 +276,59 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
         enriched_data: data.enriched_data,
         enriched_at: new Date().toISOString(),
       }));
-      showToast("Enrichment berhasil disimpan");
+      showToast("Catatan disimpan");
     } catch (err: any) {
       showToast(err.message || "Gagal menyimpan", "error");
     } finally {
       setSaving(false);
     }
+  }
+
+  // ── Riset bisnis ─────────────────────────────────────────────────────────────
+  async function handleResearch() {
+    setResearching(true);
+    setPreviewMode("none");
+    setLogLines([]);
+    startLogPolling();
+    try {
+      const res = await fetch("/api/demo/research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: biz.slug, images: brandImages }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `Riset gagal (HTTP ${res.status})`);
+
+      setBiz((b) => ({
+        ...b,
+        research_brief: data.brief,
+        researched_at: data.researched_at,
+        brand_images: data.brand_images,
+      }));
+      setBrandImages(data.brand_images ?? []);
+      showToast("Riset selesai. Cek Brand Brief sebelum generate.");
+    } catch (err: any) {
+      showToast(err.message || "Riset gagal", "error");
+    } finally {
+      stopLogPolling();
+      setResearching(false);
+      if (biz.generated_html) setPreviewMode("iframe");
+    }
+  }
+
+  async function handleSaveBrief(brief: BrandBrief) {
+    const res = await fetch("/api/demo/research", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: biz.slug, brief }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast(data.error || "Gagal menyimpan Brief", "error");
+      throw new Error(data.error || "Gagal menyimpan Brief");
+    }
+    setBiz((b) => ({ ...b, research_brief: data.brief }));
+    showToast("Brief disimpan");
   }
 
   // ── Generate / Regenerate ────────────────────────────────────────────────────
@@ -239,25 +338,18 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
     setLogLines([]);
     startLogPolling();
     try {
-      // Save enrichment dulu
-      await fetch("/api/demo/enrich", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(collectEnrichedData()),
-      });
-
-      // Generate
+      // Generate (riset otomatis di server jika Brief belum ada)
       const res = await fetch("/api/demo/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: biz.slug, force, provider: selectedProvider }),
+        body: JSON.stringify({ slug: biz.slug, force, provider: selectedProvider, polish }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         if (res.status === 429) {
-          throw new Error("⏳ Rate limit Gemini. Tunggu 15–30 detik lalu coba lagi.");
+          throw new Error(data.error || "⏳ Rate limit. Tunggu 15–30 detik lalu coba lagi.");
         }
-        throw new Error(data.error);
+        throw new Error(data.error || `Generate gagal (HTTP ${res.status})`);
       }
 
       setBiz((b) => ({
@@ -265,7 +357,8 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
         generated_html: data.html,
         generated_at: data.generated_at,
         generation_version: data.generation_version,
-        enriched_data: collectEnrichedData(),
+        research_brief: data.research_brief ?? b.research_brief,
+        researched_at: data.researched_at ?? b.researched_at,
       }));
       setManualHtml(data.html || "");
       setPreviewMode("iframe");
@@ -319,21 +412,41 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
   }
 
   // ── Status pitch ─────────────────────────────────────────────────────────────
-  async function handlePitchChange(value: string) {
+  async function handlePitchChange(value: string, markSent = false) {
     setPitchLoading(true);
     try {
       const res = await fetch("/api/demo/status", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: biz.slug, status_pitch: value }),
+        body: JSON.stringify({ slug: biz.slug, status_pitch: value, mark_sent: markSent }),
       });
-      if (!res.ok) throw new Error("Gagal update status");
-      setBiz((b) => ({ ...b, status_pitch: value }));
-      showToast("Status pitch diperbarui");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Gagal update status");
+      setBiz((b) => ({ ...b, status_pitch: value, pitched_at: data.pitched_at ?? b.pitched_at }));
+      showToast(markSent ? "Ditandai sudah dikirim" : "Status pitch diperbarui");
     } catch (err: any) {
       showToast(err.message, "error");
     } finally {
       setPitchLoading(false);
+    }
+  }
+
+  // ── Kirim via WhatsApp ───────────────────────────────────────────────────────
+  function handleSendWhatsApp() {
+    if (!phone) return;
+    window.open(buildWhatsAppLink(phone, pitchMessage), "_blank", "noopener,noreferrer");
+    // Deal / tidak tertarik tidak diturunkan kembali jadi "sudah dikirim"
+    if (biz.status_pitch === "belum_dikirim" || biz.status_pitch === "sudah_dikirim") {
+      handlePitchChange("sudah_dikirim", true);
+    }
+  }
+
+  async function handleCopyPitch() {
+    try {
+      await navigator.clipboard.writeText(pitchMessage);
+      showToast("Pesan disalin");
+    } catch {
+      showToast("Gagal menyalin pesan", "error");
     }
   }
 
@@ -465,6 +578,68 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
               </select>
             </div>
 
+            {/* Aktivitas pitch */}
+            <div className="grid grid-cols-3 gap-2">
+              <PitchStat label="Dikirim" value={formatRelativeDays(biz.pitched_at) ?? "—"} />
+              <PitchStat label="Dibuka" value={`${biz.visit_count ?? 0}×`} />
+              <PitchStat label="Terakhir dibuka" value={formatRelativeDays(biz.last_visited_at) ?? "—"} />
+            </div>
+            {needsFollowUp(biz.status_pitch, biz.pitched_at) && (
+              <p className="text-xs text-amber-400 bg-amber-900/20 border border-amber-900/50 rounded-lg px-3 py-2">
+                Sudah lebih dari {FOLLOW_UP_AFTER_DAYS} hari sejak dikirim
+                {(biz.visit_count ?? 0) > 0 ? " dan demo sudah dibuka" : " dan demo belum dibuka"}. Saatnya follow-up.
+              </p>
+            )}
+
+            {/* Pesan WhatsApp */}
+            <div className="pt-2 border-t border-navy-900 space-y-2">
+              <div className="flex items-center justify-between">
+                <label htmlFor="field-pitch-message" className="text-xs font-medium text-slate-400">Pesan WhatsApp</label>
+                <button
+                  onClick={() => setPitchMessage(buildPitchMessage(biz, demoUrl))}
+                  className="text-xs text-slate-600 hover:text-slate-400 transition-colors"
+                >
+                  Reset template
+                </button>
+              </div>
+              <textarea
+                id="field-pitch-message"
+                value={pitchMessage}
+                onChange={(e) => setPitchMessage(e.target.value)}
+                rows={8}
+                className="w-full bg-navy-900 border border-navy-800 rounded-lg px-3 py-2 text-xs leading-5 text-slate-200 focus:outline-none focus:border-forest-700 transition-colors resize-y"
+              />
+              {!biz.generated_at && (
+                <p className="text-xs text-amber-500">Demo belum di-generate. Generate dulu sebelum mengirim.</p>
+              )}
+              {biz.is_locked && (
+                <p className="text-xs text-red-400">Demo sedang dikunci, calon client tidak bisa membukanya.</p>
+              )}
+              {!phone ? (
+                <p className="text-xs text-red-400">Nomor telepon tidak valid atau kosong.</p>
+              ) : !phone.isMobile ? (
+                <p className="text-xs text-amber-500">
+                  Nomor {biz.nomor_telepon} tampaknya telepon rumah/kantor, kemungkinan tidak ada WhatsApp.
+                </p>
+              ) : null}
+              <div className="flex gap-2">
+                <button
+                  id="btn-send-whatsapp"
+                  onClick={handleSendWhatsApp}
+                  disabled={!phone || !biz.generated_at || biz.is_locked || pitchLoading}
+                  className="flex-1 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-medium transition-colors disabled:opacity-40"
+                >
+                  {biz.pitched_at ? "Kirim Ulang via WhatsApp" : "Kirim via WhatsApp"}
+                </button>
+                <button
+                  onClick={handleCopyPitch}
+                  className="px-3 py-2 rounded-lg border border-navy-800 text-slate-400 hover:text-slate-200 hover:border-navy-700 text-sm transition-colors"
+                >
+                  Salin
+                </button>
+              </div>
+            </div>
+
             {/* Lock toggle */}
             <div className="pt-2 border-t border-navy-900 space-y-2">
               <div className="flex items-center justify-between">
@@ -495,61 +670,20 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
             </div>
           </div>
 
-          {/* Enrichment form */}
-          <div className="rounded-xl border border-navy-900 bg-navy-950/40 p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Enrichment Data</h2>
-              {biz.enriched_at && (
-                <span className="text-xs text-slate-600">
-                  Terakhir: {formatDate(biz.enriched_at)}
-                </span>
-              )}
-            </div>
+          {/* Brand Brief hasil riset */}
+          <BrandBriefPanel
+            brief={biz.research_brief}
+            researchedAt={biz.researched_at}
+            images={brandImages}
+            researching={researching}
+            disabled={generating}
+            onImagesChange={setBrandImages}
+            onResearch={handleResearch}
+            onSaveBrief={handleSaveBrief}
+          />
 
-            <FormField label="Jam Buka" id="field-jam-buka">
-              <input
-                id="field-jam-buka"
-                type="text"
-                value={jamBuka}
-                onChange={(e) => setJamBuka(e.target.value)}
-                placeholder="Contoh: Senin–Sabtu 08.00–17.00 WIB"
-                className="w-full bg-navy-900 border border-navy-800 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-forest-700 transition-colors"
-              />
-            </FormField>
-
-            <FormField label="Deskripsi Singkat" id="field-deskripsi">
-              <textarea
-                id="field-deskripsi"
-                value={deskripsi}
-                onChange={(e) => setDeskripsi(e.target.value)}
-                rows={2}
-                placeholder="Deskripsi singkat tentang bisnis ini..."
-                className="w-full bg-navy-900 border border-navy-800 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-forest-700 transition-colors resize-none"
-              />
-            </FormField>
-
-            <FormField label="Layanan / Produk" hint="Satu per baris" id="field-layanan">
-              <textarea
-                id="field-layanan"
-                value={layanan}
-                onChange={(e) => setLayanan(e.target.value)}
-                rows={4}
-                placeholder={"Potong Rambut\nCuci + Blow\nCat Rambut\nKreasi Rambut"}
-                className="w-full bg-navy-900 border border-navy-800 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-forest-700 transition-colors resize-none font-mono"
-              />
-            </FormField>
-
-            <FormField label="Keunggulan" hint="Satu per baris" id="field-keunggulan">
-              <textarea
-                id="field-keunggulan"
-                value={keunggulan}
-                onChange={(e) => setKeunggulan(e.target.value)}
-                rows={3}
-                placeholder={"Harga terjangkau\nStaf berpengalaman\nBuka setiap hari"}
-                className="w-full bg-navy-900 border border-navy-800 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-forest-700 transition-colors resize-none font-mono"
-              />
-            </FormField>
-
+          {/* Catatan internal */}
+          <div className="rounded-xl border border-navy-900 bg-navy-950/40 p-5 space-y-3">
             <FormField label="Catatan Internal" hint="Tidak masuk ke website" id="field-catatan">
               <textarea
                 id="field-catatan"
@@ -567,10 +701,10 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
             <button
               id="btn-save-enrichment"
               onClick={handleSave}
-              disabled={saving || generating}
+              disabled={saving || generating || researching}
               className="w-full py-2.5 rounded-xl border border-navy-800 text-slate-300 hover:text-slate-100 hover:border-navy-700 text-sm font-medium transition-all disabled:opacity-40"
             >
-              {saving ? "Menyimpan..." : "Simpan Enrichment"}
+              {saving ? "Menyimpan..." : "Simpan Catatan"}
             </button>
 
             {/* Model AI Selector */}
@@ -582,23 +716,25 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
               </svg>
               <span className="text-xs font-medium text-slate-400">Model AI</span>
               <span className={`ml-auto text-xs px-1.5 py-0.5 rounded border font-mono ${
-                selectedProvider === "gemini"
+                isNineRouterProvider(selectedProvider)
+                  ? "bg-emerald-900/40 border-emerald-800/50 text-emerald-400"
+                  : selectedProvider === "gemini"
                   ? "bg-sky-900/40 border-sky-800/50 text-sky-400"
                   : "bg-violet-900/40 border-violet-800/50 text-violet-400"
               }`}>
-                {selectedProvider === "gemini" ? "Gemini" : "OpenRouter"}
+                {isNineRouterProvider(selectedProvider) ? "9router" : selectedProvider === "gemini" ? "Gemini" : "OpenRouter"}
               </span>
             </div>
 
             <Select<ModelOption, false, ModelGroup>
               inputId="model-selector"
-              options={MODEL_OPTIONS}
+              options={modelOptions}
               styles={SELECT_STYLES}
               isDisabled={generating || saving}
               isSearchable
               placeholder="Pilih model AI..."
               value={
-                MODEL_OPTIONS.flatMap((g) => g.options).find(
+                modelOptions.flatMap((g) => g.options).find(
                   (o) => o.value === selectedProvider
                 ) ?? null
               }
@@ -628,16 +764,44 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
               noOptionsMessage={() => "Model tidak ditemukan"}
             />
 
+            {isNineRouterProvider(selectedProvider) && (
+              <p className={`text-xs ${nineRouterError ? "text-amber-500" : "text-slate-700"}`}>
+                {nineRouterError ?? "Model lokal via 9router. Hanya jalan saat admin dibuka dari laptop (npm run dev)."}
+              </p>
+            )}
+            {isNineRouterProvider(selectedProvider) && !biz.research_brief && (
+              <p className="text-xs text-sky-400/80">Brief belum ada: riset Google dijalankan otomatis dulu (+1–3 menit).</p>
+            )}
+            {!isNineRouterProvider(selectedProvider) && !biz.research_brief && (
+              <p className="text-xs text-amber-500">Tanpa 9router tidak ada riset: konten akan dikarang dari kategori.</p>
+            )}
             {selectedProvider === "gemini" && (
               <p className="text-xs text-slate-700">Coba Gemini 2.5/2.0 Flash, fallback otomatis ke OpenRouter jika limit.</p>
             )}
+
+            <label className="flex items-start gap-2 pt-1 cursor-pointer">
+              <input
+                id="field-polish"
+                type="checkbox"
+                checked={polish}
+                onChange={(e) => setPolish(e.target.checked)}
+                disabled={generating}
+                className="mt-0.5 accent-emerald-600"
+              />
+              <span className="text-xs text-slate-400">
+                Polish tahap kedua
+                <span className="block text-slate-700">
+                  Hasil lebih rapi, tapi ~2× lebih lama. Dilewati otomatis jika waktu tidak cukup.
+                </span>
+              </span>
+            </label>
           </div>
 
           {!biz.generated_html ? (
               <button
                 id="btn-generate"
                 onClick={() => handleGenerate(false)}
-                disabled={generating || saving}
+                disabled={generating || saving || researching}
                 className="w-full py-2.5 rounded-xl bg-forest-700 hover:bg-forest-600 text-white text-sm font-semibold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 {generating ? (
@@ -658,7 +822,7 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
               <button
                 id="btn-regenerate"
                 onClick={() => handleGenerate(true)}
-                disabled={generating || saving}
+                disabled={generating || saving || researching}
                 className="w-full py-2.5 rounded-xl bg-amber-600/80 hover:bg-amber-600 text-white text-sm font-semibold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 {generating ? (
@@ -751,13 +915,13 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
           </div>
 
           <div className="rounded-xl border border-navy-900 overflow-hidden bg-navy-950/20" style={{ height: "1650px" }}>
-            {generating ? (
+            {generating || researching ? (
               <div className="h-full flex flex-col gap-0 overflow-hidden">
                 {/* Header log panel */}
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-navy-900 bg-navy-950/60 shrink-0">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-xs font-mono text-slate-400">Generate Log — Live</span>
+                    <span className="text-xs font-mono text-slate-400">{researching ? "Riset" : "Generate"} Log — Live</span>
                   </div>
                   <span className="text-xs text-slate-600 font-mono">
                     {selectedProvider === "gemini" ? "Gemini AI" : selectedProvider}
@@ -801,7 +965,9 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
                 {/* Footer spinner */}
                 <div className="shrink-0 px-4 py-2 border-t border-navy-900 bg-navy-950/40 flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full border-2 border-forest-700/40 border-t-forest-500 animate-spin" />
-                  <span className="text-xs text-slate-600">Proses berjalan... bisa memakan 30–180 detik</span>
+                  <span className="text-xs text-slate-600">
+                    Proses berjalan... {polish ? "bisa sampai ~4 menit" : "sekitar 1 menit"}
+                  </span>
                 </div>
               </div>
             ) : biz.generated_html && previewMode === "iframe" ? (
@@ -893,6 +1059,15 @@ export default function DemoDetailClient({ biz: initial }: { biz: Business }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function PitchStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-navy-900 bg-navy-900/40 px-3 py-2">
+      <p className="text-[11px] text-slate-600">{label}</p>
+      <p className="text-sm text-slate-200 font-medium mt-0.5">{value}</p>
     </div>
   );
 }

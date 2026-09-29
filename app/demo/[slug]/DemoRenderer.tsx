@@ -7,9 +7,10 @@
  */
 
 import DemoBanner from "./DemoBanner";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 interface Props {
+  slug: string;
   html: string;
   namaBisnis: string;
   nomorTelepon: string | null;
@@ -40,8 +41,28 @@ function normalizeSrcDocHtml(rawHtml: string): string {
   return html;
 }
 
-export default function DemoRenderer({ html, namaBisnis, nomorTelepon }: Props) {
+function useVisitBeacon(slug: string) {
+  useEffect(() => {
+    const key = `demo-visit:${slug}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      // sessionStorage bisa diblokir; dedupe tetap dilakukan di server
+    }
+
+    fetch("/api/demo/visit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug }),
+      keepalive: true,
+    }).catch(() => {});
+  }, [slug]);
+}
+
+export default function DemoRenderer({ slug, html, namaBisnis, nomorTelepon }: Props) {
   const safeHtml = useMemo(() => normalizeSrcDocHtml(html), [html]);
+  useVisitBeacon(slug);
 
   return (
     <div className="w-full h-dvh overflow-hidden bg-white">

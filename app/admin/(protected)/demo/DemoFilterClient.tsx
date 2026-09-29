@@ -2,13 +2,18 @@
 
 /**
  * app/admin/(protected)/demo/DemoFilterClient.tsx
- * Client component: filter bar + tabel bisnis interaktif
+ * Client component: filter bar + tabel bisnis interaktif + generate massal
+ *
+ * Generate massal berjalan berurutan dari browser (1 request per bisnis),
+ * jadi tab harus tetap terbuka sampai antrean selesai.
  */
 
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Select, { StylesConfig } from "react-select";
+import { formatRelativeDays, needsFollowUp } from "@/lib/demo-pitch";
+import { DEFAULT_PROVIDER } from "@/lib/ai-providers";
 
 interface Business {
   id: string;
@@ -18,14 +23,32 @@ interface Business {
   rating: number | null;
   jumlah_ulasan: number;
   nomor_telepon: string | null;
-  enriched_data: any;
-  enriched_at: string | null;
-  generated_html: string | null;
+  researched_at: string | null;
   generated_at: string | null;
   generation_version: number;
   status_pitch: string;
+  pitched_at: string | null;
+  visit_count: number | null;
+  last_visited_at: string | null;
   is_locked: boolean;
 }
+
+type JobState = "queued" | "running" | "done" | "skipped" | "failed";
+interface Job {
+  state: JobState;
+  message?: string;
+}
+
+const BULK_DELAY_MS = 3_000;
+const BULK_RATE_LIMIT_DELAY_MS = 30_000;
+
+const JOB_LABELS: Record<JobState, { label: string; color: string }> = {
+  queued: { label: "Antre", color: "text-slate-400 bg-slate-800/60 border-slate-700" },
+  running: { label: "Proses...", color: "text-sky-300 bg-sky-900/30 border-sky-800/60" },
+  done: { label: "Berhasil", color: "text-emerald-400 bg-emerald-900/30 border-emerald-800/60" },
+  skipped: { label: "Dilewati", color: "text-slate-400 bg-slate-800/60 border-slate-700" },
+  failed: { label: "Gagal", color: "text-red-400 bg-red-900/30 border-red-800/60" },
+};
 
 interface Filters {
   search: string;
@@ -53,8 +76,8 @@ const PITCH_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 function getGenerateStatus(biz: Business) {
-  if (!biz.generated_html) return { label: "Belum", color: "text-slate-500 bg-slate-900 border-slate-800", dot: "bg-red-500" };
-  if (biz.enriched_data) return { label: "Generated + Enriched", color: "text-emerald-400 bg-emerald-900/20 border-emerald-900/50", dot: "bg-emerald-500" };
+  if (!biz.generated_at) return { label: "Belum", color: "text-slate-500 bg-slate-900 border-slate-800", dot: "bg-red-500" };
+  if (biz.researched_at) return { label: "Generated + Riset", color: "text-emerald-400 bg-emerald-900/20 border-emerald-900/50", dot: "bg-emerald-500" };
   return { label: "Generated", color: "text-amber-400 bg-amber-900/20 border-amber-900/50", dot: "bg-amber-500" };
 }
 
@@ -129,6 +152,97 @@ export default function DemoFilterClient({
 
   const [filters, setFilters] = useState<Filters>(currentFilters);
 
+  // ─── Generate massal ────────────────────────────────────────────────────────
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [jobs, setJobs] = useState<Record<string, Job>>({});
+  const [bulkRunning, setBulkRunning] = useState(false);
+  const [bulkPolish, setBulkPolish] = useState(false);
+  const stopRef = useRef(false);
+
+  useEffect(() => {
+    if (!bulkRunning) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [bulkRunning]);
+
+  function setJob(slug: string, job: Job) {
+    setJobs((prev) => ({ ...prev, [slug]: job }));
+  }
+
+  function toggleSelected(slug: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  }
+
+  const allOnPageSelected = businesses.length > 0 && businesses.every((b) => selected.has(b.slug));
+
+  function toggleSelectAllOnPage() {
+    setSelected(allOnPageSelected ? new Set() : new Set(businesses.map((b) => b.slug)));
+  }
+
+  function selectNotGeneratedOnPage() {
+    setSelected(new Set(businesses.filter((b) => !b.generated_at && !b.is_locked).map((b) => b.slug)));
+  }
+
+  async function runBulkGenerate() {
+    const slugs = businesses.filter((b) => selected.has(b.slug)).map((b) => b.slug);
+    if (slugs.length === 0) return;
+
+    stopRef.current = false;
+    setBulkRunning(true);
+    setJobs(Object.fromEntries(slugs.map((slug) => [slug, { state: "queued" as const }])));
+
+    for (let i = 0; i < slugs.length; i++) {
+      if (stopRef.current) break;
+      const slug = slugs[i];
+      setJob(slug, { state: "running" });
+
+      let delay = BULK_DELAY_MS;
+      try {
+        const res = await fetch("/api/demo/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          // force=false: bisnis yang sudah punya HTML dilewati
+          body: JSON.stringify({ slug, force: false, provider: DEFAULT_PROVIDER, polish: bulkPolish }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 429) delay = BULK_RATE_LIMIT_DELAY_MS;
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        setJob(slug, data.cached ? { state: "skipped", message: "Sudah punya demo" } : { state: "done" });
+      } catch (err: any) {
+        setJob(slug, { state: "failed", message: err?.message || "Generate gagal" });
+      }
+
+      if (i < slugs.length - 1 && !stopRef.current) {
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+
+    setJobs((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).map(([slug, job]) => [
+          slug,
+          job.state === "queued" ? { state: "skipped" as const, message: "Dihentikan" } : job,
+        ])
+      )
+    );
+    setBulkRunning(false);
+    setSelected(new Set());
+    router.refresh();
+  }
+
+  const jobList = Object.values(jobs);
+  const jobsFinished = jobList.filter((j) => j.state !== "queued" && j.state !== "running").length;
+  const jobsFailed = jobList.filter((j) => j.state === "failed").length;
+
   // ─── Opsi untuk react-select ────────────────────────────────────────────────
   const kategoriOptions = [
     { value: "all", label: "Semua Kategori" },
@@ -145,6 +259,7 @@ export default function DemoFilterClient({
     { value: "all", label: "Semua Pitch" },
     { value: "belum_dikirim", label: "Belum Dikirim" },
     { value: "sudah_dikirim", label: "Sudah Dikirim" },
+    { value: "follow_up", label: "Perlu Follow-up" },
     { value: "deal", label: "Deal ✓" },
     { value: "tidak_tertarik", label: "Tidak Tertarik" },
   ];
@@ -310,9 +425,81 @@ export default function DemoFilterClient({
         </div>
       </div>
 
+      {/* Generate massal */}
+      {(selected.size > 0 || bulkRunning || jobList.length > 0) && (
+        <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl border border-forest-700/40 bg-forest-700/10 text-sm">
+          {bulkRunning ? (
+            <>
+              <span className="h-4 w-4 rounded-full border-2 border-emerald-500/30 border-t-emerald-400 animate-spin" />
+              <span className="text-slate-300">
+                Generate {jobsFinished}/{jobList.length}
+                {jobsFailed > 0 && <span className="text-red-400"> · {jobsFailed} gagal</span>}
+              </span>
+              <span className="text-xs text-slate-600">Jangan tutup tab ini sampai selesai</span>
+              <button
+                onClick={() => (stopRef.current = true)}
+                className="ml-auto px-3 py-1.5 rounded-lg border border-red-900/60 text-red-400 hover:bg-red-950/40 text-xs font-medium transition-colors"
+              >
+                Hentikan setelah yang ini
+              </button>
+            </>
+          ) : selected.size > 0 ? (
+            <>
+              <span className="text-slate-300">{selected.size} bisnis dipilih</span>
+              <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={bulkPolish}
+                  onChange={(e) => setBulkPolish(e.target.checked)}
+                  className="accent-emerald-600"
+                />
+                Dengan polish (~2× lebih lama)
+              </label>
+              <div className="ml-auto flex gap-2">
+                <button
+                  onClick={() => setSelected(new Set())}
+                  className="px-3 py-1.5 rounded-lg border border-navy-800 text-slate-500 hover:text-slate-300 text-xs transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  id="btn-bulk-generate"
+                  onClick={runBulkGenerate}
+                  className="px-3 py-1.5 rounded-lg bg-forest-700 hover:bg-forest-600 text-white text-xs font-semibold transition-colors"
+                >
+                  Generate {selected.size} terpilih
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="text-slate-300">
+                Generate massal selesai: {jobList.filter((j) => j.state === "done").length} berhasil,{" "}
+                {jobsFailed} gagal, {jobList.filter((j) => j.state === "skipped").length} dilewati
+              </span>
+              <button
+                onClick={() => setJobs({})}
+                className="ml-auto px-3 py-1.5 rounded-lg border border-navy-800 text-slate-500 hover:text-slate-300 text-xs transition-colors"
+              >
+                Tutup
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Total info */}
       <div className="flex items-center justify-between text-sm text-slate-500">
-        <span>Menampilkan {businesses.length} dari {totalCount.toLocaleString("id-ID")} bisnis</span>
+        <span className="flex items-center gap-3">
+          Menampilkan {businesses.length} dari {totalCount.toLocaleString("id-ID")} bisnis
+          <button
+            onClick={selectNotGeneratedOnPage}
+            disabled={bulkRunning}
+            className="text-xs text-forest-500 hover:text-forest-200 disabled:opacity-40 transition-colors"
+          >
+            Pilih yang belum generate
+          </button>
+        </span>
         <span>Hal {currentPage} / {totalPages}</span>
       </div>
 
@@ -322,6 +509,16 @@ export default function DemoFilterClient({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-navy-900 bg-navy-950">
+                <th className="pl-4 py-3 w-8">
+                  <input
+                    type="checkbox"
+                    aria-label="Pilih semua di halaman ini"
+                    checked={allOnPageSelected}
+                    onChange={toggleSelectAllOnPage}
+                    disabled={bulkRunning}
+                    className="accent-emerald-600"
+                  />
+                </th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Bisnis</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Kategori</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Generate</th>
@@ -333,7 +530,7 @@ export default function DemoFilterClient({
             <tbody className="divide-y divide-navy-900">
               {businesses.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-slate-600">
+                  <td colSpan={7} className="text-center py-12 text-slate-600">
                     Tidak ada data yang cocok dengan filter
                   </td>
                 </tr>
@@ -341,9 +538,23 @@ export default function DemoFilterClient({
                 businesses.map((biz) => {
                   const genStatus = getGenerateStatus(biz);
                   const pitchStatus = PITCH_LABELS[biz.status_pitch] || PITCH_LABELS.belum_dikirim;
+                  const job = jobs[biz.slug];
+                  const sentAgo = formatRelativeDays(biz.pitched_at);
+                  const followUp = needsFollowUp(biz.status_pitch, biz.pitched_at);
 
                   return (
                     <tr key={biz.id} className="hover:bg-navy-950/60 transition-colors group">
+                      <td className="pl-4 py-3">
+                        <input
+                          type="checkbox"
+                          aria-label={`Pilih ${biz.nama_bisnis}`}
+                          checked={selected.has(biz.slug)}
+                          onChange={() => toggleSelected(biz.slug)}
+                          disabled={bulkRunning}
+                          className="accent-emerald-600"
+                        />
+                      </td>
+
                       {/* Bisnis */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -371,10 +582,25 @@ export default function DemoFilterClient({
 
                       {/* Generate status */}
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs font-medium ${genStatus.color}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${genStatus.dot}`} />
-                          {genStatus.label}
-                        </span>
+                        {job ? (
+                          <span
+                            title={job.message}
+                            className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs font-medium ${JOB_LABELS[job.state].color}`}
+                          >
+                            {job.state === "running" && (
+                              <span className="h-2.5 w-2.5 rounded-full border border-sky-300/40 border-t-sky-300 animate-spin" />
+                            )}
+                            {JOB_LABELS[job.state].label}
+                          </span>
+                        ) : (
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs font-medium ${genStatus.color}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${genStatus.dot}`} />
+                            {genStatus.label}
+                          </span>
+                        )}
+                        {job?.state === "failed" && job.message && (
+                          <p className="text-xs text-red-400/80 mt-1 max-w-48 truncate" title={job.message}>{job.message}</p>
+                        )}
                         {biz.generation_version > 0 && (
                           <p className="text-xs text-slate-700 mt-1">v{biz.generation_version}</p>
                         )}
@@ -385,6 +611,16 @@ export default function DemoFilterClient({
                         <span className={`inline-flex px-2 py-1 rounded-md border text-xs font-medium ${pitchStatus.color}`}>
                           {pitchStatus.label}
                         </span>
+                        {sentAgo && (
+                          <p className={`text-xs mt-1 ${followUp ? "text-amber-400" : "text-slate-600"}`}>
+                            {followUp ? "Follow-up · " : ""}dikirim {sentAgo}
+                          </p>
+                        )}
+                        {(biz.visit_count ?? 0) > 0 && (
+                          <p className="text-xs text-emerald-500/80 mt-0.5">
+                            Dibuka {biz.visit_count}× · {formatRelativeDays(biz.last_visited_at)}
+                          </p>
+                        )}
                       </td>
 
                       {/* Lock */}
@@ -397,7 +633,7 @@ export default function DemoFilterClient({
                       {/* Actions */}
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-2">
-                          {biz.generated_html && (
+                          {biz.generated_at && (
                             <a
                               href={`/demo/${biz.slug}`}
                               target="_blank"
@@ -416,7 +652,7 @@ export default function DemoFilterClient({
                             id={`demo-edit-${biz.slug}`}
                             className="px-3 py-1.5 rounded-lg bg-navy-900 border border-navy-800 text-slate-400 hover:text-slate-200 hover:border-navy-700 text-xs font-medium transition-all"
                           >
-                            {biz.generated_html ? "Edit" : "Proses"}
+                            {biz.generated_at ? "Edit" : "Proses"}
                           </Link>
                         </div>
                       </td>

@@ -1,87 +1,121 @@
 /**
  * lib/generate-logger.ts
- * File-based logger khusus untuk proses AI generate.
- * Semua log ditulis ke: logs/ai-generate.log (di root project)
+ * Logger proses AI generate. Tiap baris ditulis ke console (Vercel logs)
+ * dan ke tabel demo_generate_logs agar bisa dipantau live dari admin.
  *
- * Format tiap baris:
+ * Sesi disimpan di AsyncLocalStorage, jadi beberapa generate yang berjalan
+ * bersamaan tidak saling menimpa session ID.
+ *
+ * Format baris untuk UI:
  *   [2026-04-01 15:30:00.123] [LEVEL] [SESSION] message
  */
 
-import fs from "fs";
-import path from "path";
+import { AsyncLocalStorage } from "node:async_hooks";
+import { getServiceClient } from "./supabase-admin";
 
-const LOG_DIR = path.join(process.cwd(), "logs");
-const LOG_FILE = path.join(LOG_DIR, "ai-generate.log");
-const MAX_LOG_BYTES = 5 * 1024 * 1024; // 5 MB, lalu rotate
+export type LogLevel = "START" | "INFO" | "OK" | "WARN" | "ERROR" | "DONE";
 
-let currentSession = "";
-
-/** Buat session ID baru (slug + timestamp) */
-export function startLogSession(slug: string): string {
-  currentSession = `${slug}@${Date.now()}`;
-  log("START", `════════════════════════════════════════════════════════════`);
-  log("START", `Sesi baru dimulai — bisnis: ${slug}`);
-  log("START", `Session ID: ${currentSession}`);
-  return currentSession;
+interface LogSession {
+  id: string;
+  slug: string;
+  seq: number;
+  pending: Promise<unknown>[];
 }
 
-/** Tulis satu baris log */
-export function log(
-  level: "START" | "INFO" | "OK" | "WARN" | "ERROR" | "DONE",
-  message: string,
-  session?: string
-): void {
-  try {
-    // Pastikan dir ada
-    if (!fs.existsSync(LOG_DIR)) {
-      fs.mkdirSync(LOG_DIR, { recursive: true });
-    }
+const RETENTION_DAYS = 30;
+const sessionStore = new AsyncLocalStorage<LogSession>();
 
-    // Rotate jika terlalu besar
-    if (fs.existsSync(LOG_FILE)) {
-      const stat = fs.statSync(LOG_FILE);
-      if (stat.size > MAX_LOG_BYTES) {
-        const backup = LOG_FILE.replace(".log", ".old.log");
-        if (fs.existsSync(backup)) fs.unlinkSync(backup);
-        fs.renameSync(LOG_FILE, backup);
-      }
-    }
+/** Jalankan fn di dalam sesi log baru; semua insert log di-flush sebelum return. */
+export async function runLogSession<T>(slug: string, fn: () => Promise<T>): Promise<T> {
+  const session: LogSession = { id: `${slug}@${Date.now()}`, slug, seq: 0, pending: [] };
 
-    const now = new Date();
-    const ts = now
-      .toLocaleString("id-ID", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
+  return sessionStore.run(session, async () => {
+    log("START", `════════════════════════════════════════════════════════════`);
+    log("START", `Sesi baru dimulai — bisnis: ${slug}`);
+    log("START", `Session ID: ${session.id}`);
+    pruneOldLogs();
+
+    try {
+      return await fn();
+    } finally {
+      await Promise.allSettled(session.pending);
+    }
+  });
+}
+
+export function log(level: LogLevel, message: string): void {
+  const session = sessionStore.getStore();
+  const createdAt = new Date();
+  const line = formatLine(createdAt, level, session?.id ?? "-", message);
+
+  if (level === "ERROR") console.error(line);
+  else console.log(line);
+
+  if (!session) return;
+
+  const seq = session.seq++;
+  const insert = Promise.resolve(
+    getServiceClient()
+      .from("demo_generate_logs")
+      .insert({
+        session_id: session.id,
+        slug: session.slug,
+        seq,
+        level,
+        message,
+        created_at: createdAt.toISOString(),
       })
-      .replace(/\//g, "-")
-      .replace(",", "");
-
-    const ms = String(now.getMilliseconds()).padStart(3, "0");
-    const sid = session || currentSession || "-";
-    const line = `[${ts}.${ms}] [${level.padEnd(5)}] [${sid}] ${message}\n`;
-
-    fs.appendFileSync(LOG_FILE, line, "utf8");
-  } catch {
-    // Jangan crash app hanya karena log gagal
-  }
+  ).catch(() => {
+    // Jangan gagalkan generate hanya karena log gagal
+  });
+  session.pending.push(insert);
 }
 
-/** Baca N baris terakhir dari log file */
-export function readLastLines(n = 100): string[] {
-  try {
-    if (!fs.existsSync(LOG_FILE)) return ["(Log file belum ada — belum ada generate yang dijalankan)"];
-    const content = fs.readFileSync(LOG_FILE, "utf8");
-    const lines = content.split("\n").filter(Boolean);
-    return lines.slice(-n);
-  } catch (err: any) {
-    return [`(Gagal baca log: ${err?.message})`];
-  }
+/** N baris log terakhir (urut lama → baru), opsional difilter per slug. */
+export async function readRecentLogs(options: { slug?: string; limit?: number } = {}): Promise<string[]> {
+  const limit = Math.min(Math.max(options.limit ?? 150, 1), 500);
+
+  let query = getServiceClient()
+    .from("demo_generate_logs")
+    .select("session_id, level, message, created_at, seq")
+    .order("created_at", { ascending: false })
+    .order("seq", { ascending: false })
+    .limit(limit);
+
+  if (options.slug) query = query.eq("slug", options.slug);
+
+  const { data, error } = await query;
+  if (error) return [`(Gagal baca log: ${error.message})`];
+  if (!data?.length) return ["(Belum ada log generate)"];
+
+  return data
+    .reverse()
+    .map((row) => formatLine(new Date(row.created_at), row.level as LogLevel, row.session_id, row.message));
 }
 
-/** Path log file (untuk ditampilkan di UI) */
-export const LOG_FILE_PATH = LOG_FILE;
+function formatLine(date: Date, level: LogLevel, sessionId: string, message: string): string {
+  const ts = date
+    .toLocaleString("id-ID", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    })
+    .replace(/\//g, "-")
+    .replace(",", "");
+  const ms = String(date.getMilliseconds()).padStart(3, "0");
+  return `[${ts}.${ms}] [${level.padEnd(5)}] [${sessionId}] ${message}`;
+}
+
+function pruneOldLogs(): void {
+  const session = sessionStore.getStore();
+  const cutoff = new Date(Date.now() - RETENTION_DAYS * 86_400_000).toISOString();
+  const prune = Promise.resolve(
+    getServiceClient().from("demo_generate_logs").delete().lt("created_at", cutoff)
+  ).catch(() => {});
+  session?.pending.push(prune);
+}
