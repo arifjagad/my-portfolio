@@ -3,20 +3,38 @@
  * Public demo page — render HTML hasil generate Gemini
  *
  * Flow:
- * 1. Ambil metadata bisnis dari Supabase by slug (server, tidak diserialisasi ke klien)
+ * 1. Ambil data bisnis dari Supabase by slug (server)
  * 2. Jika not found → 404
  * 3. Jika is_locked → halaman locked
- * 4. Jika generated_html ada → DemoRenderer mengambil HTML via /api/demo/html
- *    saat runtime (client-side fetch), lalu disuntik ke iframe srcDoc.
- *    Tujuannya: view-source halaman TIDAK mengandung HTML demo.
+ * 4. Jika generated_html ada → HTML disamarkan (XOR + base64, kunci acak
+ *    per request) lalu di-pass ke DemoRenderer yang membukanya kembali
+ *    di sisi klien sebelum disuntik ke iframe srcDoc.
+ *    Tujuannya: view-source / salinan halaman tidak langsung memuat HTML
+ *    demo yang bisa dipakai, TANPA menambah round-trip fetch (cepat).
  * 5. Jika belum ada → halaman "sedang disiapkan"
  */
 
 import { notFound } from "next/navigation";
+import { randomBytes } from "node:crypto";
 import { getServiceClient } from "@/lib/supabase-admin";
 import DemoRenderer from "./DemoRenderer";
 import { Metadata } from "next";
 import { LONG_TAIL_KEYWORDS, SHORT_KEYWORDS, absoluteUrl } from "@/lib/seo";
+
+/**
+ * Samarkan HTML demo agar view-source / hasil Ctrl+S (via menu) tidak
+ * langsung menampilkan HTML yang bisa dipakai. XOR dengan kunci acak per
+ * request + base64; kunci ikut dikirim ke klien untuk dibuka kembali.
+ * Ini penghalang kasual, bukan enkripsi keamanan: yang niat tetap bisa
+ * membalikannya, sama seperti batasan devtools pada umumnya.
+ */
+function obfuscateHtml(html: string): { data: string; key: string } {
+  const key = randomBytes(32);
+  const buf = Buffer.from(html, "utf8");
+  const out = Buffer.alloc(buf.length);
+  for (let i = 0; i < buf.length; i++) out[i] = buf[i] ^ key[i % key.length];
+  return { data: out.toString("base64"), key: key.toString("base64") };
+}
 
 // ─── generateMetadata ─────────────────────────────────────────────────────────
 export async function generateMetadata({
@@ -100,12 +118,13 @@ export default async function DemoPage({
   }
 
   // ── RENDER HTML ─────────────────────────────────────────────────────────────
-  // generated_html TIDAK di-pass ke client component agar tidak ikut
-  // terserialisasi ke RSC payload / view-source. DemoRenderer mengambilnya
-  // sendiri via /api/demo/html saat runtime.
+  // HTML disamarkan dulu agar view-source / salinan halaman tidak langsung
+  // memuat HTML demo yang bisa dipakai. Dibuka kembali di DemoRenderer.
+  const payload = obfuscateHtml(biz.generated_html);
   return (
     <DemoRenderer
       slug={biz.slug}
+      payload={payload}
       namaBisnis={biz.nama_bisnis}
       nomorTelepon={biz.nomor_telepon}
     />
