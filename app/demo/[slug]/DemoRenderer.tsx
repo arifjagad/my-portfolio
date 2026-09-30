@@ -18,7 +18,7 @@
  */
 
 import DemoBanner from "./DemoBanner";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface ObfuscatedPayload {
   data: string;
@@ -132,6 +132,13 @@ export default function DemoRenderer({ slug, payload, namaBisnis, nomorTelepon }
     () => normalizeSrcDocHtml(deobfuscate(payload)),
     [payload]
   );
+  // Iframe HANYA dirender di klien (setelah mount), bukan saat SSR.
+  // Kalau ikut SSR, React menulis HTML demo (yang sudah dibuka) ke atribut
+  // srcdoc di HTML awal — view-source jadi bocor lagi (meski ter-escape).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   useVisitBeacon(slug);
   useViewerProtection();
 
@@ -146,14 +153,18 @@ export default function DemoRenderer({ slug, payload, namaBisnis, nomorTelepon }
         sehingga bagian atas iframe tidak tertutup oleh banner.
       */}
       <div className="w-full h-full pt-11">
-        <iframe
-          srcDoc={safeHtml}
-          title={`Demo website — ${namaBisnis}`}
-          className="w-full h-full border-0 block"
-          sandbox="allow-scripts allow-popups allow-forms"
-          referrerPolicy="no-referrer"
-          loading="eager"
-        />
+        {mounted ? (
+          <iframe
+            srcDoc={safeHtml}
+            title={`Demo website — ${namaBisnis}`}
+            className="w-full h-full border-0 block"
+            sandbox="allow-scripts allow-popups allow-forms"
+            referrerPolicy="no-referrer"
+            loading="eager"
+          />
+        ) : (
+          <div className="w-full h-full bg-white" aria-hidden="true" />
+        )}
       </div>
     </div>
   );
