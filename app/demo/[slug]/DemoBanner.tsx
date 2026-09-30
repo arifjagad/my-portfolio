@@ -54,7 +54,7 @@ export default function DemoBanner({ namaBisnis, nomorTelepon }: DemoBannerProps
           </svg>
         </div>
         <p className="text-xs text-gray-400 truncate">
-          <span className="text-gray-500 hidden sm:inline">Preview website untuk </span>
+          <span className="text-gray-500 hidden sm:inline">Disiapkan khusus untuk </span>
           <span className="text-white font-medium">{namaBisnis}</span>
           <span className="text-gray-600 mx-1.5">·</span>
           <span className="text-emerald-500/80">dibuat oleh </span>

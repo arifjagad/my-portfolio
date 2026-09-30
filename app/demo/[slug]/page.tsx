@@ -6,20 +6,49 @@
  * 1. Ambil data bisnis dari Supabase by slug (server)
  * 2. Jika not found → 404
  * 3. Jika is_locked → halaman locked
- * 4. Jika generated_html ada → HTML disamarkan (XOR + base64, kunci acak
- *    per request) lalu di-pass ke DemoRenderer yang membukanya kembali
- *    di sisi klien sebelum disuntik ke iframe srcDoc.
+ * 4. Jika generated_html ada:
+ *    a. Sisipkan penanda forensik per prospek (komentar HTML tak terlihat)
+ *       agar kebocoran bisa dilacak sumbernya.
+ *    b. HTML disamarkan (XOR + base64, kunci acak per request) lalu di-pass
+ *       ke DemoRenderer yang membukanya kembali di sisi klien sebelum
+ *       disuntik ke iframe srcDoc (iframe hanya dirender setelah mount agar
+ *       SSR tidak membocorkan isi ke atribut srcdoc).
  *    Tujuannya: view-source / salinan halaman tidak langsung memuat HTML
  *    demo yang bisa dipakai, TANPA menambah round-trip fetch (cepat).
  * 5. Jika belum ada → halaman "sedang disiapkan"
  */
 
 import { notFound } from "next/navigation";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { getServiceClient } from "@/lib/supabase-admin";
 import DemoRenderer from "./DemoRenderer";
 import { Metadata } from "next";
 import { LONG_TAIL_KEYWORDS, SHORT_KEYWORDS, absoluteUrl } from "@/lib/seo";
+
+/**
+ * Ketertelusuran per prospek (forensik, bukan enkripsi).
+ * Setiap slug mendapat ID unik deterministik; disisipkan sebagai komentar
+ * HTML tak terlihat di dalam demo SEBELUM disamarkan. Kalau suatu saat ada
+ * HTML demo yang bocor/tersebar, ID ini menunjukkan link prospek mana yang
+ * menjadi sumbernya. Verifikasi: hitung ulang untuk slug yang dikenal —
+ *   node -e "console.log(require('node:crypto').createHash('sha256').update('demo-trace:v1:'+'<slug>').digest('hex').slice(0,16))"
+ * Ini penghalang forensik kasual: yang sengaja membersihkan komentar tetap
+ * bisa menghapusnya, sama seperti batasan devtools pada umumnya.
+ */
+function demoTraceId(slug: string): string {
+  return createHash("sha256")
+    .update(`demo-trace:v1:${slug}`)
+    .digest("hex")
+    .slice(0, 16);
+}
+
+function injectTraceMarker(html: string, traceId: string): string {
+  const marker = `<!--demo-trace:${traceId}-->`;
+  if (/<\/body>/i.test(html)) {
+    return html.replace(/<\/body>/i, `${marker}</body>`);
+  }
+  return `${html}${marker}`;
+}
 
 /**
  * Samarkan HTML demo agar view-source / hasil Ctrl+S (via menu) tidak
@@ -118,9 +147,12 @@ export default async function DemoPage({
   }
 
   // ── RENDER HTML ─────────────────────────────────────────────────────────────
-  // HTML disamarkan dulu agar view-source / salinan halaman tidak langsung
-  // memuat HTML demo yang bisa dipakai. Dibuka kembali di DemoRenderer.
-  const payload = obfuscateHtml(biz.generated_html);
+  // 1. Sisipkan penanda forensik per prospek (tak terlihat di render).
+  // 2. Samarkan agar view-source / salinan halaman tidak langsung memuat
+  //    HTML demo yang bisa dipakai. Dibuka kembali di DemoRenderer.
+  const traceId = demoTraceId(biz.slug);
+  const tracedHtml = injectTraceMarker(biz.generated_html, traceId);
+  const payload = obfuscateHtml(tracedHtml);
   return (
     <DemoRenderer
       slug={biz.slug}
