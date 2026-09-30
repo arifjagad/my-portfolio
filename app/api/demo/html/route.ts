@@ -8,6 +8,52 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase-admin";
 import { requireAdminSession } from "@/lib/admin-route-auth";
+import { rateLimitByIp } from "@/lib/rate-limit";
+
+const PUBLIC_SLUG = /^[a-z0-9][a-z0-9-]{0,199}$/;
+
+/**
+ * GET /api/demo/html?slug=xxx
+ * Publik: mengembalikan generated_html untuk SATU slug.
+ * Catatan: ini lapisan anti-copas kasual, bukan keamanan mutlak.
+ * - HTML tidak lagi dibake ke halaman (view-source bersih).
+ * - Hanya dilayani untuk fetch dari halaman /demo/ (cek referer).
+ * - Rate limit per IP.
+ * Pengguna yang niat tetap bisa menyalin via devtools; itu batasan
+ * fundamental konten yang dirender browser.
+ */
+export async function GET(req: NextRequest) {
+  const referer = req.headers.get("referer") || "";
+  if (!referer.includes("/demo/")) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const rate = rateLimitByIp(req, "api:demo:html", 60, 60_000);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "Terlalu banyak permintaan, coba lagi nanti" },
+      { status: 429 }
+    );
+  }
+
+  const slug = new URL(req.url).searchParams.get("slug")?.trim() || "";
+  if (!PUBLIC_SLUG.test(slug)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const supabase = getServiceClient();
+  const { data: biz } = await supabase
+    .from("demo_businesses")
+    .select("generated_html, is_locked")
+    .eq("slug", slug)
+    .single();
+
+  if (!biz || biz.is_locked || !biz.generated_html) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ html: biz.generated_html });
+}
 
 export async function POST(req: NextRequest) {
   try {

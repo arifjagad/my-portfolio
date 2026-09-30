@@ -3,10 +3,12 @@
  * Public demo page — render HTML hasil generate Gemini
  *
  * Flow:
- * 1. Ambil data bisnis dari Supabase by slug
+ * 1. Ambil metadata bisnis dari Supabase by slug (server, tidak diserialisasi ke klien)
  * 2. Jika not found → 404
  * 3. Jika is_locked → halaman locked
- * 4. Jika generated_html ada → render via dangerouslySetInnerHTML
+ * 4. Jika generated_html ada → DemoRenderer mengambil HTML via /api/demo/html
+ *    saat runtime (client-side fetch), lalu disuntik ke iframe srcDoc.
+ *    Tujuannya: view-source halaman TIDAK mengandung HTML demo.
  * 5. Jika belum ada → halaman "sedang disiapkan"
  */
 
@@ -98,10 +100,12 @@ export default async function DemoPage({
   }
 
   // ── RENDER HTML ─────────────────────────────────────────────────────────────
+  // generated_html TIDAK di-pass ke client component agar tidak ikut
+  // terserialisasi ke RSC payload / view-source. DemoRenderer mengambilnya
+  // sendiri via /api/demo/html saat runtime.
   return (
     <DemoRenderer
       slug={biz.slug}
-      html={biz.generated_html}
       namaBisnis={biz.nama_bisnis}
       nomorTelepon={biz.nomor_telepon}
     />
