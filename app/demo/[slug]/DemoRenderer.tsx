@@ -8,9 +8,11 @@
  * Anti-copas kasual (lapisan viewer):
  * 1. HTML demo diambil via /api/demo/html saat runtime, BUKAN dibake ke
  *    halaman — jadi view-source tidak mengandung HTML demo.
- * 2. Blokir klik kanan, drag, seleksi, copy, dan Ctrl/Cmd+S,U,P di dokumen
+ * 2. Blokir klik kanan, drag, seleksi, copy, Ctrl/Cmd+S,U,P, dan shortcut
+ *    pembuka devtools (F12, Ctrl+Shift+I/J/C, Cmd+Opt+I/J/C) di dokumen
  *    viewer (di dalam iframe sudah ada proteksi sendiri di tiap HTML demo).
- * Bukan keamanan mutlak: devtools tetap bisa menyalin DOM yang ter-render.
+ *    Semua ini hanya menghambat yang kasual: menu browser dan devtools
+ *    yang sudah terbuka tetap bisa menyalin DOM yang ter-render.
  */
 
 import DemoBanner from "./DemoBanner";
@@ -91,6 +93,14 @@ function useViewerProtection() {
     const onKeyDown = (e: KeyboardEvent) => {
       const k = (e.key || "").toLowerCase();
       if ((e.ctrlKey || e.metaKey) && ["s", "u", "p"].includes(k)) {
+        e.preventDefault();
+      }
+      // Persulit buka devtools via keyboard (kasual saja; lewat menu browser tetap bisa)
+      if (e.key === "F12") e.preventDefault();
+      if (
+        (e.ctrlKey && e.shiftKey && ["i", "j", "c"].includes(k)) ||
+        (e.metaKey && e.altKey && ["i", "j", "c"].includes(k))
+      ) {
         e.preventDefault();
       }
     };
