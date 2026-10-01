@@ -1,4 +1,5 @@
 import { supabaseServer, isSupabaseConfigured } from "@/lib/supabase";
+import { getServiceClient } from "@/lib/supabase-admin";
 import { getGithubStats } from "@/lib/github";
 import { Metadata } from "next";
 import Navbar from "./components/Navbar";
@@ -7,6 +8,7 @@ import AboutSection from "./components/AboutSection";
 import GithubStatsSection from "./components/GithubStatsSection";
 import TechStackSection from "./components/TechStackSection";
 import ProjectsSection from "./components/ProjectsSection";
+import DemoShowcaseSection, { DemoShowcaseItem } from "./components/DemoShowcaseSection";
 import ExperienceSection from "./components/ExperienceSection";
 import TestimonialsSection from "./components/TestimonialsSection";
 import ContactSection from "./components/ContactSection";
@@ -26,6 +28,7 @@ export const revalidate = 3600;
 const EMPTY_DATA = {
   githubStats: { publicRepos: 0, followers: 0, totalStars: 0, topLanguages: [] as string[] },
   projects: [] as Project[],
+  demos: [] as DemoShowcaseItem[],
   experiences: [] as Experience[],
   testimonials: [] as Testimonial[],
   techStacks: [] as TechStack[],
@@ -68,12 +71,41 @@ async function getData() {
         .single(),
     ]);
 
+  // Demo bisnis lokal: 8 demo prioritas pitch (bukan latest sembarang),
+  // agar yang tampil di homepage adalah demo kurasi. Pakai service client
+  // karena tabel demo_businesses tidak terbaca anon.
+  const PITCH_SLUGS = [
+    "restoran-ria",
+    "saness-salon-spa",
+    "vibes-barbershop-coffee-johor",
+    "cosima-beauty-salon",
+    "klinik-pratama-mitra-mikayla",
+    "zap-clinic-pattimura-medan",
+    "kodagu-restoran",
+    "noura-aesthetic",
+  ];
+  let demos: DemoShowcaseItem[] = [];
+  try {
+    const { data } = await getServiceClient()
+      .from("demo_businesses")
+      .select("slug, nama_bisnis, kategori, rating, jumlah_ulasan")
+      .in("slug", PITCH_SLUGS)
+      .not("generated_at", "is", null)
+      .eq("is_locked", false);
+    const rows = (data ?? []) as DemoShowcaseItem[];
+    // urutkan sesuai prioritas pitch
+    demos = PITCH_SLUGS.flatMap((s) => rows.filter((r) => r.slug === s)).slice(0, 6);
+  } catch {
+    demos = [];
+  }
+
   return {
     githubStats,
     projects:
       projectsRes.status === "fulfilled"
         ? ((projectsRes.value.data ?? []) as Project[])
         : [],
+    demos,
     experiences:
       experiencesRes.status === "fulfilled"
         ? ((experiencesRes.value.data ?? []) as Experience[])
@@ -133,7 +165,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const { githubStats, projects, experiences, testimonials, techStacks, profile } = await getData();
+  const { githubStats, projects, demos, experiences, testimonials, techStacks, profile } = await getData();
 
   return (
     <>
@@ -142,6 +174,7 @@ export default async function HomePage() {
         <HeroSection profile={profile} />
         <AboutSection profile={profile} />
         <ProjectsSection projects={projects} />
+        <DemoShowcaseSection demos={demos} />
         <ExperienceSection experiences={experiences} />
         <TechStackSection skills={techStacks} />
         <GithubStatsSection stats={githubStats} />
